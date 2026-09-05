@@ -1,0 +1,39 @@
+<nb-layout>
+  <nb-layout-header [fixed]="true">
+    <div class="thanh-tren">
+      <button type="button" class="nut-menu" (click)="batTatSidebar()" aria-label="Ẩn/hiện menu">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <a class="thuong-hieu" routerLink="/">
+        <i class="fas fa-list-check"></i>
+        <span>Giao nhiệm vụ</span>
+      </a>
+
+      <div class="qlnv-day-phai nguoi-dung" *ngIf="nguoiDung">
+        <div class="thong-tin">
+          <div class="ho-ten">{{ nguoiDung.fullname }}</div>
+          <div class="phu">{{ tenVaiTro }}<span *ngIf="nguoiDung.unitname"> · {{ nguoiDung.unitname }}</span></div>
+        </div>
+        <button nbButton [ghost]="true" status="basic" size="small" type="button" (click)="dangXuat()">
+          <i class="fas fa-right-from-bracket"></i>
+          <span class="chu-dang-xuat">Đăng xuất</span>
+        </button>
+      </div>
+    </div>
+  </nb-layout-header>
+
+  <nb-sidebar tag="menu-chinh" [responsive]="true" [start]="true">
+    <nb-menu [items]="menu"></nb-menu>
+  </nb-sidebar>
+
+  <nb-layout-column>
+    <router-outlet></router-outlet>
+  </nb-layout-column>
+
+  <nb-layout-footer [fixed]="true">
+    <span class="chan-trang">
+      Hệ thống Quản lý nhiệm vụ — phân hệ Giao nhiệm vụ tích hợp AI gợi ý người thực hiện
+    </span>
+  </nb-layout-footer>
+</nb-layout>

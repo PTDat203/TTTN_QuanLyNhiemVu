@@ -1,0 +1,51 @@
+:host {
+  display: inline-block;
+}
+
+.khoi-han {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-start;
+}
+
+.ngay {
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-han {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+
+  i {
+    font-size: 0.65rem;
+  }
+}
+
+.mau-do {
+  color: #fff;
+  background: var(--qlnv-do, #ff3d71);
+}
+
+.mau-vang {
+  color: #6b4800;
+  background: rgba(255, 170, 0, 0.25);
+}
+
+.mau-xam {
+  color: var(--qlnv-chu-phu, #8f9bb3);
+  background: transparent;
+  padding-left: 0;
+}
+
+.mau-trong {
+  color: var(--qlnv-chu-phu, #8f9bb3);
+  background: transparent;
+  padding-left: 0;
+  font-style: italic;
+}

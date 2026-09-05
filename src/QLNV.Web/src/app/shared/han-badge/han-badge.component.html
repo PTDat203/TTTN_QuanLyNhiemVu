@@ -1,0 +1,7 @@
+<span class="khoi-han">
+  <span class="ngay" *ngIf="hienNgay && ngayChu">{{ ngayChu }}</span>
+  <span *ngIf="hienBadge" class="badge-han" [ngClass]="lopMau">
+    <i class="fas" [ngClass]="laQuaHan ? 'fa-triangle-exclamation' : 'fa-clock'"></i>
+    {{ chuBadge }}
+  </span>
+</span>

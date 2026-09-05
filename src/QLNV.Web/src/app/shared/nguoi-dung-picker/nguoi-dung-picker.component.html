@@ -1,0 +1,57 @@
+<div class="picker">
+  <label *ngIf="nhan" class="nhan" [class.qlnv-bat-buoc]="batBuoc">{{ nhan }}</label>
+
+  <!-- Nhung nguoi dang duoc chon -->
+  <div class="the-da-chon" *ngIf="nguoiDaChon.length > 0">
+    <span class="the" *ngFor="let n of nguoiDaChon; trackBy: theoUser">
+      <span class="ten">{{ n.fullname }}</span>
+      <span class="don-vi" *ngIf="n.unitname">· {{ n.unitname }}</span>
+      <button
+        *ngIf="!chiDoc"
+        type="button"
+        class="bo"
+        [attr.aria-label]="'Bỏ chọn ' + n.fullname"
+        (click)="boChon(n.userid)"
+      >
+        <i class="fas fa-xmark"></i>
+      </button>
+    </span>
+    <button *ngIf="!chiDoc && nguoiDaChon.length > 1" type="button" class="xoa-het" (click)="xoaHet()">
+      Bỏ chọn tất cả
+    </button>
+  </div>
+
+  <div class="chua-chon" *ngIf="nguoiDaChon.length === 0 && chiDoc">Chưa chọn người nào</div>
+
+  <ng-container *ngIf="!chiDoc">
+    <input
+      type="text"
+      class="o-tim"
+      [placeholder]="goiY"
+      [value]="tuKhoa"
+      (input)="doiTuKhoa($any($event.target).value)"
+    />
+
+    <div class="dang-tai" *ngIf="dangTai">Đang tải danh sách người dùng...</div>
+    <div class="loi" *ngIf="loi">{{ loi }}</div>
+
+    <div class="vung-cuon" *ngIf="!dangTai && !loi" [style.max-height.rem]="caoToiDa">
+      <div class="trong" *ngIf="nhomHienThi.length === 0">Không tìm thấy người phù hợp.</div>
+
+      <div class="nhom" *ngFor="let nhom of nhomHienThi; trackBy: theoUnit">
+        <div class="ten-don-vi">{{ nhom.tendonvi }}</div>
+        <button
+          type="button"
+          class="dong-nguoi"
+          *ngFor="let n of nhom.nguoiDung; trackBy: theoUser"
+          [class.dang-chon]="daChon(n.userid)"
+          (click)="bamNguoi(n)"
+        >
+          <i class="fas o-tick" [ngClass]="daChon(n.userid) ? 'fa-square-check' : 'fa-square'"></i>
+          <span class="ho-ten">{{ n.fullname }}</span>
+          <span class="chuc-vu" *ngIf="n.chucvu">{{ n.chucvu }}</span>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</div>

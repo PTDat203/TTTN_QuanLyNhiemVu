@@ -1,0 +1,83 @@
+:host {
+  display: inline-block;
+}
+
+.nhom-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+
+  &.xep-doc {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  background: #f2f4f8;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.nho .chip {
+  font-size: 0.6875rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.cham {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+
+.ma {
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mau lay tu cot `mau` cua DM_TUDIEN (xanh|duong|xam|cam|do|tim|vang) */
+.mau-xanh {
+  color: #007a5a;
+  background: rgba(0, 184, 135, 0.14);
+  border-color: rgba(0, 184, 135, 0.35);
+}
+.mau-duong {
+  color: #2a4bbd;
+  background: rgba(51, 102, 255, 0.12);
+  border-color: rgba(51, 102, 255, 0.32);
+}
+.mau-xam {
+  color: #5d6a85;
+  background: rgba(143, 155, 179, 0.16);
+  border-color: rgba(143, 155, 179, 0.35);
+}
+.mau-cam {
+  color: #b45f00;
+  background: rgba(255, 159, 67, 0.16);
+  border-color: rgba(255, 159, 67, 0.4);
+}
+.mau-do {
+  color: #c02350;
+  background: rgba(255, 61, 113, 0.13);
+  border-color: rgba(255, 61, 113, 0.35);
+}
+.mau-tim {
+  color: #6f42c1;
+  background: rgba(161, 110, 255, 0.14);
+  border-color: rgba(161, 110, 255, 0.35);
+}
+.mau-vang {
+  color: #9a6700;
+  background: rgba(255, 170, 0, 0.16);
+  border-color: rgba(255, 170, 0, 0.4);
+}

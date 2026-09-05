@@ -1,0 +1,60 @@
+.thanh-tren {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.nut-menu {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.thuong-hieu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+}
+
+.nguoi-dung {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.thong-tin {
+  text-align: right;
+  line-height: 1.2;
+}
+
+.ho-ten {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.phu {
+  font-size: 0.6875rem;
+  color: var(--qlnv-chu-phu, #8f9bb3);
+}
+
+.chu-dang-xuat {
+  margin-left: 0.35rem;
+}
+
+.chan-trang {
+  font-size: 0.75rem;
+  color: var(--qlnv-chu-phu, #8f9bb3);
+}
+
+@media (max-width: 576px) {
+  .thong-tin,
+  .chu-dang-xuat {
+    display: none;
+  }
+}

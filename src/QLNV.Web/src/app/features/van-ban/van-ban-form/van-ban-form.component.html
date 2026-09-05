@@ -1,0 +1,196 @@
+<!--
+  M04 - Tao / sua van ban chi dao (§3.2).
+  8 truong bat buoc theo dac ta + 2 o tuy chon phuc vu header cua M05.
+-->
+<nb-card class="hop-van-ban">
+  <nb-card-header>
+    <i class="fas fa-file-lines"></i>
+    <span class="tieu-de">{{ tieuDe }}</span>
+  </nb-card-header>
+
+  <nb-card-body [nbSpinner]="dangNap" nbSpinnerMessage="Đang tải văn bản...">
+    <form [formGroup]="form" class="luoi-form" (ngSubmit)="luu()">
+      <!-- 1. So ky hieu -->
+      <div class="o-form">
+        <label for="vb-sokyhieu">Số ký hiệu</label>
+        <input
+          id="vb-sokyhieu"
+          type="text"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          formControlName="sokyhieu"
+          placeholder="Ví dụ: 128/CV-UBND"
+          [class.sai]="sai('sokyhieu')"
+        />
+        <div class="loi-o" *ngIf="sai('sokyhieu')">Số ký hiệu tối đa 100 ký tự.</div>
+      </div>
+
+      <!-- 2. Ngay ban hanh -->
+      <div class="o-form">
+        <label for="vb-ngaybanhanh">Ngày ban hành</label>
+        <input
+          id="vb-ngaybanhanh"
+          type="date"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          formControlName="ngaybanhanh"
+        />
+      </div>
+
+      <!-- 3. Loai van ban -->
+      <div class="o-form">
+        <label for="vb-loaivb">Loại văn bản</label>
+        <nb-select
+          id="vb-loaivb"
+          formControlName="loaivb"
+          size="small"
+          [fullWidth]="true"
+          placeholder="-- Chọn loại văn bản --"
+        >
+          <nb-option value="">-- Không chọn --</nb-option>
+          <nb-option *ngFor="let l of dsLoaiVb" [value]="l.ma">{{ l.nhan }}</nb-option>
+        </nb-select>
+      </div>
+
+      <!-- 4. Co quan ban hanh -->
+      <div class="o-form">
+        <label for="vb-coquan">Cơ quan ban hành</label>
+        <input
+          id="vb-coquan"
+          type="text"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          formControlName="coquanbanhanh"
+          placeholder="Ví dụ: UBND thành phố"
+          [class.sai]="sai('coquanbanhanh')"
+        />
+        <div class="loi-o" *ngIf="sai('coquanbanhanh')">Cơ quan ban hành tối đa 255 ký tự.</div>
+      </div>
+
+      <!-- 5. Trich yeu - BAT BUOC -->
+      <div class="o-form rong-doi">
+        <label for="vb-trichyeu" class="qlnv-bat-buoc">Trích yếu</label>
+        <textarea
+          id="vb-trichyeu"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          rows="3"
+          formControlName="trichyeu"
+          placeholder="Tóm tắt nội dung chỉ đạo của văn bản"
+          [class.sai]="sai('trichyeu')"
+        ></textarea>
+        <div class="dong-phu">
+          <span class="loi-o" *ngIf="sai('trichyeu')">
+            Trích yếu là bắt buộc và tối đa 2000 ký tự.
+          </span>
+          <span class="dem-ky-tu qlnv-day-phai">{{ soKyTuTrichYeu }} / 2000</span>
+        </div>
+      </div>
+
+      <!-- 6. Do khan - BAT BUOC -->
+      <div class="o-form">
+        <label for="vb-dokhan" class="qlnv-bat-buoc">Độ khẩn</label>
+        <nb-select
+          id="vb-dokhan"
+          formControlName="dokhan"
+          size="small"
+          [fullWidth]="true"
+          placeholder="-- Chọn độ khẩn --"
+        >
+          <nb-option *ngFor="let d of dsDoKhan" [value]="d.ma">{{ d.nhan }}</nb-option>
+        </nb-select>
+        <div class="loi-o" *ngIf="sai('dokhan')">Vui lòng chọn độ khẩn.</div>
+      </div>
+
+      <!-- 7. Linh vuc -->
+      <div class="o-form">
+        <label for="vb-linhvuc">Lĩnh vực</label>
+        <nb-select
+          id="vb-linhvuc"
+          formControlName="linhvuc"
+          size="small"
+          [fullWidth]="true"
+          placeholder="-- Chọn lĩnh vực --"
+        >
+          <nb-option value="">-- Không chọn --</nb-option>
+          <nb-option *ngFor="let lv of dsLinhVuc" [value]="lv.ma">{{ lv.ten }}</nb-option>
+        </nb-select>
+        <div class="ghi-chu">Lĩnh vực của văn bản là giá trị mặc định cho mọi dòng nhiệm vụ ở M05.</div>
+      </div>
+
+      <!-- Mo rong: phuc vu header cua M05 -->
+      <div class="o-form">
+        <label for="vb-nguoitheodoi">Lãnh đạo phụ trách</label>
+        <input
+          id="vb-nguoitheodoi"
+          type="text"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          formControlName="nguoitheodoi"
+          placeholder="Họ tên lãnh đạo theo dõi"
+          [class.sai]="sai('nguoitheodoi')"
+        />
+      </div>
+
+      <div class="o-form">
+        <label for="vb-thoigian">Thời gian chỉ đạo</label>
+        <input
+          id="vb-thoigian"
+          type="datetime-local"
+          nbInput
+          [fullWidth]="true"
+          fieldSize="small"
+          formControlName="thoigianchidao"
+        />
+      </div>
+
+      <!-- 8. Tep dinh kem -->
+      <div class="o-form rong-doi">
+        <label for="vb-tep">Tệp đính kèm</label>
+        <input
+          id="vb-tep"
+          type="file"
+          class="o-tep"
+          multiple
+          [disabled]="dangTaiTep"
+          (change)="chonTep($event)"
+        />
+        <div class="ghi-chu">
+          Chấp nhận pdf, doc, docx, xls, xlsx, png, jpg, jpeg — tối đa 20MB mỗi tệp.
+        </div>
+        <div class="dang-tai-tep" *ngIf="dangTaiTep">Đang tải tệp lên máy chủ...</div>
+
+        <ul class="ds-tep" *ngIf="dsTep.length > 0">
+          <li *ngFor="let t of dsTep">
+            <i class="fas fa-paperclip"></i>
+            <span class="ten-tep">{{ t.fileName }}</span>
+            <span class="co-tep">{{ kichThuoc(t) }}</span>
+            <button type="button" class="nut-bo-tep" (click)="boTep(t)" title="Bỏ tệp này">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </form>
+  </nb-card-body>
+
+  <nb-card-footer class="chan">
+    <button type="button" nbButton status="basic" size="small" (click)="huy()">Huỷ</button>
+    <button
+      type="button"
+      nbButton
+      status="primary"
+      size="small"
+      [disabled]="dangLuu || dangTaiTep"
+      (click)="luu()"
+    >
+      <i class="fas fa-floppy-disk"></i>
+      {{ dangLuu ? 'Đang lưu...' : 'Lưu' }}
+    </button>
+  </nb-card-footer>
+</nb-card>

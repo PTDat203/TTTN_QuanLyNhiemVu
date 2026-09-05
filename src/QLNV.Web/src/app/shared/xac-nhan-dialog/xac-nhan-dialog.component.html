@@ -1,0 +1,29 @@
+<nb-card class="the-xac-nhan">
+  <nb-card-header>{{ tieuDe }}</nb-card-header>
+
+  <nb-card-body>
+    <p class="thong-bao">{{ thongBao }}</p>
+
+    <label *ngIf="canNhapLyDo" class="nhan-ly-do" [class.qlnv-bat-buoc]="batBuocLyDo">
+      {{ nhanLyDo }}
+    </label>
+    <textarea
+      *ngIf="canNhapLyDo"
+      nbInput
+      [fullWidth]="true"
+      rows="3"
+      [placeholder]="goiYLyDo"
+      [(ngModel)]="lyDo"
+    ></textarea>
+    <div class="loi" *ngIf="batBuocLyDo && khoaDongY">
+      Vui lòng nhập tối thiểu {{ doDaiLyDoToiThieu }} ký tự.
+    </div>
+  </nb-card-body>
+
+  <nb-card-footer class="chan">
+    <button nbButton [ghost]="true" status="basic" type="button" (click)="huy()">{{ nhanHuy }}</button>
+    <button nbButton [status]="trangThai" type="button" [disabled]="khoaDongY" (click)="dongY()">
+      {{ nhanDongY }}
+    </button>
+  </nb-card-footer>
+</nb-card>

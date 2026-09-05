@@ -1,0 +1,29 @@
+.the-xac-nhan {
+  width: 30rem;
+  max-width: 92vw;
+  margin: 0;
+}
+
+.thong-bao {
+  margin-bottom: 0.75rem;
+  white-space: pre-line;
+}
+
+.nhan-ly-do {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.loi {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--qlnv-do, #ff3d71);
+}
+
+.chan {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

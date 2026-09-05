@@ -1,0 +1,9 @@
+<div class="khoi-tien-do">
+  <div class="hang">
+    <div class="ranh" [style.height.px]="cao" [attr.title]="coDuLieu ? phanTram + '%' : 'Chưa có báo cáo tiến độ'">
+      <div class="thanh" [style.width.%]="phanTram" [style.background]="mauThanh"></div>
+    </div>
+    <span class="so" *ngIf="hienSo">{{ coDuLieu ? phanTram + '%' : '—' }}</span>
+  </div>
+  <div class="nhan-phu" *ngIf="nhanPhu">{{ nhanPhu }}</div>
+</div>

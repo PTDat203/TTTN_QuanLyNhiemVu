@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    QLNV.Tests — bo kiem thu xUnit cua phan he Giao nhiem vu.
+    Dau ra kiem chung cua Tuan 7 (§8 T7): ">= 25 test may trang thai pass".
+
+    Tham chieu: QLNV.Core (thuc the + hop dong) va QLNV.Infrastructure (cai dat).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>QLNV.Tests</RootNamespace>
+    <AssemblyName>QLNV.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Ten test bang tieng Viet khong dau => khong can canh bao tai lieu XML -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.6" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\QLNV.Core\QLNV.Core.csproj" />
+    <ProjectReference Include="..\..\src\QLNV.Infrastructure\QLNV.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

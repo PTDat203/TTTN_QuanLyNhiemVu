@@ -1,0 +1,31 @@
+<span class="nhom-chip" [class.xep-doc]="xepDoc" [class.nho]="kichThuoc === 'nho'">
+  <!-- Truc A - trangthai (§2.1) -->
+  <span class="chip" [ngClass]="'mau-' + mauA" [attr.title]="'Trạng thái nhiệm vụ (trục A): ' + nhanA">
+    <span class="cham"></span>
+    <span class="chu">{{ nhanA }}</span>
+    <span class="ma" *ngIf="hienMa">({{ trangthai }})</span>
+  </span>
+
+  <!-- Truc B - trangthaiDvXuly (§2.2) -->
+  <span
+    *ngIf="hienB"
+    class="chip"
+    [ngClass]="'mau-' + mauB"
+    [attr.title]="'Trạng thái kiểm tra kết quả (trục B): ' + nhanB"
+  >
+    <span class="cham"></span>
+    <span class="chu">{{ nhanB }}</span>
+    <span class="ma" *ngIf="hienMa">({{ maB }})</span>
+  </span>
+
+  <!-- Truc C - trangthaixulygiahan (§2.3), chi khi dang co quy trinh gia han -->
+  <span
+    *ngIf="hienC"
+    class="chip mau-tim"
+    [attr.title]="'Trạng thái duyệt gia hạn (trục C): ' + nhanC"
+  >
+    <span class="cham"></span>
+    <span class="chu">{{ nhanC }}</span>
+    <span class="ma" *ngIf="hienMa">({{ trangthaixulygiahan }})</span>
+  </span>
+</span>
