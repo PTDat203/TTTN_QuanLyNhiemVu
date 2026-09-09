@@ -1,14 +1,11 @@
-# Phân hệ Giao nhiệm vụ tích hợp AI gợi ý người thực hiện
+# Mini App Quản lý nhiệm vụ
 
-Đồ án thực tập — Phạm Tiến Đạt, MSV 0212966, lớp 66KSCS, Khoa Công nghệ thông tin,
-Đại học Xây dựng Hà Nội. GVHD: TS. Hoàng Nam Thắng. Đơn vị thực tập: Công ty TNHH Giải pháp
-Công nghệ B&T Việt Nam.
+Đồ án thực tập tốt nghiệp — Phạm Tiến Đạt, MSV 0212966, lớp 66KSCS,
+Khoa Công nghệ thông tin, Đại học Xây dựng Hà Nội.
+GVHD: TS. Hoàng Nam Thắng. Đơn vị thực tập: Công ty TNHH Giải pháp Công nghệ B&T Việt Nam.
 
-Dựng lại nghiệp vụ giao nhiệm vụ của hệ thống **QLNV** thành một ứng dụng web nhỏ, bổ sung
-chức năng **AI gợi ý người thực hiện phù hợp** dựa trên chuyên môn, lịch sử thực hiện,
-hiệu quả công việc và khối lượng hiện tại.
-
-Đặc tả đầy đủ: [DAC-TA-PHAN-HE-GIAO-NHIEM-VU.md](DAC-TA-PHAN-HE-GIAO-NHIEM-VU.md)
+Ứng dụng web quản lý việc giao và theo dõi nhiệm vụ, tích hợp **AI gợi ý người thực hiện
+phù hợp** dựa trên kỹ năng, lịch sử thực hiện, tỷ lệ đúng hạn và khối lượng đang xử lý.
 
 ---
 
@@ -16,13 +13,54 @@ hiệu quả công việc và khối lượng hiện tại.
 
 | Thư mục | Nội dung |
 |---|---|
-| [`BackEnd/`](BackEnd/) | ASP.NET Core 8 + EF Core 8. Nghiệp vụ, API, CSDL, kiểm thử. |
-| [`FrontEnd/`](FrontEnd/) | Angular 15.2.10 + Nebular 11. Giao diện 13 màn hình. |
-| [`demo/`](demo/) | Bản mô phỏng một tệp HTML dựng ở giai đoạn phân tích. Không phải mã nguồn dự án — giữ lại để đối chiếu nghiệp vụ và trình bày nhanh. |
-| `DAC-TA-PHAN-HE-GIAO-NHIEM-VU.md` | Đặc tả gốc, dựng từ việc đọc trực tiếp mã nguồn hệ QLNV. |
+| `BackEnd/` | ASP.NET Core 8 + EF Core 8 + Oracle 21c XE |
+| `FrontEnd/` | Angular 15 |
+| `Tài liệu/` | Đặc tả, prompt, bản lưu trữ — **không commit lên git** |
 
-Hai phần chạy độc lập và giao tiếp qua HTTP. Backend không phục vụ tệp tĩnh của frontend;
-khi phát triển, Angular gọi API qua proxy.
+---
+
+## Luồng nghiệp vụ
+
+```text
+MANAGER tạo nhiệm vụ            STATUS_CODE = MOI_TAO
+   ↓ chọn người thực hiện
+Giao nhiệm vụ                   → DA_GIAO
+   ↓
+EMPLOYEE tiếp nhận              → DANG_THUC_HIEN
+   ↓ cập nhật % tiến độ nhiều lần, ghi vào TASK_PROGRESS
+Gửi báo cáo kết quả             → CHO_XAC_NHAN
+   ↓
+MANAGER kiểm tra  ─┬─ đạt      → HOAN_THANH
+                   └─ chưa đạt → YEU_CAU_BO_SUNG → quay lại thực hiện
+```
+
+Hai vai trò: `MANAGER` giao việc, `EMPLOYEE` thực hiện.
+
+---
+
+## Lược đồ CSDL — 7 bảng
+
+```text
+USERS ──┬── 1:N ── USER_SKILLS
+        ├── 1:N ── TASKS (CREATOR_ID)
+        ├── 1:N ── TASKS (ASSIGNEE_ID)
+        ├── 1:N ── TASK_PROGRESS
+        ├── 1:N ── TASK_REPORTS (REPORTER_ID / REVIEWER_ID)
+        └── 1:N ── TASK_ATTACHMENTS
+
+TASK_STATUS_LOOKUP ── 1:N ── TASKS
+
+TASKS ──┬── 1:N ── TASK_PROGRESS
+        ├── 1:N ── TASK_REPORTS
+        └── 1:N ── TASK_ATTACHMENTS
+
+TASK_REPORTS ── 1:N ── TASK_ATTACHMENTS  (REPORT_ID nullable)
+```
+
+Trạng thái nhiệm vụ nằm ở `TASKS.STATUS_CODE` (FK tới `TASK_STATUS_LOOKUP`).
+Trạng thái báo cáo nằm riêng ở `TASK_REPORTS.STATUS`. Hai cơ chế không trộn vào nhau.
+
+Đặc tả đầy đủ: `Tài liệu/DATABASE_SOURCE_OF_TRUTH_TASK_MANAGEMENT.md`
 
 ---
 
@@ -32,26 +70,48 @@ khi phát triển, Angular gọi API qua proxy.
 
 | Công cụ | Phiên bản | Kiểm tra |
 |---|---|---|
+| Oracle Database XE | 21c | `lsnrctl status` |
 | .NET SDK | 8.0 | `dotnet --version` |
 | Node.js | 18 hoặc 20 LTS | `node --version` |
 
-Máy dựng dự án này **chưa cài cả hai**. Tải tại <https://dot.net/download> và
-<https://nodejs.org>. Không cần Docker, không cần SQL Server — mặc định dùng SQLite.
+Oracle đã được cài sẵn trên máy phát triển. **`.NET SDK` và `Node.js` thì chưa** — tải tại
+<https://dot.net/download> và <https://nodejs.org>.
 
-### Backend
+### 1. Schema Oracle — đã dựng sẵn
+
+**Không chạy script tạo bảng.** Schema `TASK_APP` đã được tạo thủ công và là nguồn chuẩn:
+7 bảng, đủ khóa chính, khóa ngoại, ràng buộc CHECK, index và danh mục trạng thái.
+
+Ứng dụng **không** tạo bảng, **không** gọi `EnsureCreated()`, **không** dùng EF Migrations.
+
+Kiểm tra nhanh:
+
+```sql
+SELECT TABLE_NAME FROM USER_TABLES ORDER BY TABLE_NAME;
+SELECT * FROM TASK_STATUS_LOOKUP ORDER BY SORT_ORDER;
+```
+
+Chi tiết schema và các lệnh kiểm tra: [`BackEnd/db/README.md`](BackEnd/db/README.md).
+
+> Các script trong `BackEnd/db/_khong_dung/` là bản cũ hoặc script DROP — **không chạy**.
+
+### 2. Backend
 
 ```bash
 cd BackEnd
+dotnet user-secrets set "ConnectionStrings:OracleConnection" \
+  "User Id=TASK_APP;Password=<mật_khẩu>;Data Source=127.0.0.1:1521/XEPDB1;" \
+  --project src/TaskApp.Api
+dotnet user-secrets set "Jwt:Key" "<chuỗi ngẫu nhiên ít nhất 32 ký tự>" \
+  --project src/TaskApp.Api
+
 dotnet restore
-dotnet run --project src/QLNV.Api
+dotnet run --project src/TaskApp.Api
 ```
 
-Lần chạy đầu sẽ tạo CSDL SQLite và nạp dữ liệu mẫu (22 người dùng, 8 lĩnh vực,
-320+ nhiệm vụ lịch sử). Swagger: <http://localhost:5000/swagger>
+Swagger: <http://localhost:5000/swagger>
 
-### Frontend
-
-Mở cửa sổ dòng lệnh thứ hai:
+### 3. Frontend
 
 ```bash
 cd FrontEnd
@@ -59,50 +119,47 @@ npm install
 npm start
 ```
 
-Giao diện: <http://localhost:4200>
-
-### Tài khoản demo
-
-Mật khẩu chung `123456`. Danh sách tài khoản hiện ngay trên màn đăng nhập.
-Đổi vai để thấy bộ nút thay đổi theo bảng phân quyền §6.2 — một nhiệm vụ trông rất khác
-giữa mắt người giao và mắt người thực hiện.
+<http://localhost:4200>
 
 ---
 
-## Hai chức năng cần xem trước
+## AI gợi ý người thực hiện
 
-**Vòng nghiệp vụ 7 bước.** Tạo văn bản chỉ đạo → giao nhiệm vụ → tiếp nhận → cập nhật tiến độ
-→ gửi báo cáo → kiểm tra kết quả → hoàn thành, có cả nhánh *Chưa đạt → yêu cầu bổ sung → làm lại*.
-Trạng thái chạy trên **hai trục song song** (`trangthai` và `trangthaiDvXuly`) đúng như hệ gốc,
-không gộp lại.
+`POST /api/goi-y/nguoi-thuc-hien` trả danh sách ứng viên kèm điểm 0–1 và lý do tiếng Việt.
 
-**AI gợi ý người thực hiện** (`POST /api/v1/ai/goi-y-nguoi-thuc-hien`). Trả top-5 ứng viên kèm
-điểm 0–100, năm điểm thành phần và lý do bằng tiếng Việt. Điểm tổng bằng đúng tổng năm phần
-đóng góp, nên giải thích được từng con số — yêu cầu bắt buộc với hệ thống dùng trong môi trường
-hành chính.
+```text
+DiemTong = 0.40·SkillSimilarity + 0.20·HistoryScore + 0.25·OnTimeScore + 0.15·WorkloadScore
+```
 
----
+| Thành phần | Tính từ |
+|---|---|
+| `SkillSimilarity` | TF-IDF + cosine giữa nội dung nhiệm vụ và `USER_SKILLS`, có trọng số theo `SKILL_LEVEL` |
+| `HistoryScore` | Số nhiệm vụ `HOAN_THANH`, thang logarit để người làm nhiều không nuốt hết điểm |
+| `OnTimeScore` | Tỷ lệ nghiệm thu trước `DUE_DATE`, làm mượt Laplace để người ít dữ liệu không bị điểm cực đoan |
+| `WorkloadScore` | Số nhiệm vụ đang mở, có trọng số theo `PRIORITY` |
 
-## Ba điểm khác hệ gốc, phải nói rõ khi báo cáo
+Trọng số đọc từ cấu hình, sửa được qua `PUT /api/goi-y/cau-hinh`.
 
-Đặc tả §10 liệt kê những thứ **không sao chép được** từ hệ QLNV vì chúng không tồn tại.
-Ba thứ dưới đây là phần **tự thiết kế**, không được trình bày như hiện trạng hệ gốc:
-
-1. **Bước "Tiếp nhận"** — hệ gốc không có nút, không có API, không có trạng thái nào (§10.3).
-2. **Bắt buộc nhập lý do** khi từ chối nhiệm vụ và khi trả lại kết quả — hệ gốc không bắt buộc (§10.7).
-3. **Chuyên môn người dùng suy từ lịch sử.** Hệ gốc không lưu năng lực người dùng ở bất kỳ
-   bảng hay màn hình nào (§10.1), nên thay vì dựng phân hệ hồ sơ năng lực, hệ đếm số nhiệm vụ
-   đã nghiệm thu của từng người theo từng lĩnh vực. Hệ quả phải chấp nhận: người mới bị điểm
-   chuyên môn thấp trong vài việc đầu — xử lý bằng cơ chế cold start §9.5.
-
-Ngoài ra, `mucdoht` được validate 0–100 (hệ gốc để ô `type="text"`, không kiểm), và
-route `/quan-tri/*` có guard ở cả hai phía (hệ gốc không có `canActivate` cho route admin nào).
+Không dùng LLM, không gọi dịch vụ ngoài, không có bảng lưu kết quả AI — tính theo thời gian
+thực. Mô hình là **chấm điểm đa tiêu chí có trọng số**, giải thích được từng con số: điểm tổng
+bằng đúng tổng các thành phần đã nhân trọng số. Đây là lựa chọn có chủ đích, vì dữ liệu ban đầu
+quá ít để huấn luyện mô hình học máy và môi trường sử dụng đòi hỏi giải thích được.
 
 ---
 
-## Tình trạng kiểm chứng
+## Ghi chú kỹ thuật
 
-Mã nguồn được rà bằng đọc mã, **chưa từng chạy qua trình biên dịch** vì máy dựng dự án không có
-.NET SDK lẫn Node. Lần đầu `dotnet build` và `ng build` nhiều khả năng còn lỗi vặt cần sửa.
-Bộ test xUnit trong `BackEnd/tests` phủ ma trận chuyển trạng thái T1–T14 và các công thức AI —
-chạy `dotnet test` là biết ngay phần nghiệp vụ có đúng không.
+Ba điểm dễ sai khi làm việc với Oracle + EF Core, đã xử lý sẵn trong mã:
+
+**`VARCHAR2` đếm byte, không đếm ký tự.** Một ký tự tiếng Việt có dấu chiếm tới 3 byte trong
+`AL32UTF8`, nên mọi cột chứa tiếng Việt đều khai `VARCHAR2(n CHAR)`. Thiếu `CHAR` sẽ gặp
+`ORA-12899` ngay ở dữ liệu mẫu.
+
+**EF Core đặt định danh trong nháy kép, Oracle thì viết hoa.** Mọi bảng và cột đều được map
+tường minh bằng chữ hoa (`ToTable("USERS")`, `HasColumnName("FULL_NAME")`). Thiếu một cột là
+cột đó sinh ra `"PropertyName"` và báo `ORA-00904`.
+
+**Không dùng `Guid` và `DateOnly`.** Khoá chính là `NUMBER` tự tăng, ánh xạ sang `long`;
+provider Oracle 8.23.x chưa hỗ trợ `DateOnly`.
+
+Chi tiết: `Tài liệu/CLAUDE_CONTEXT_TASK_MANAGEMENT_DB.md`
