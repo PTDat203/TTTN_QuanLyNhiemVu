@@ -1,12 +1,32 @@
 {
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+
+  "//": [
+    "Cổng CỐ ĐỊNH 5080 (http) và 5443 (https).",
+    "5080 phải khớp với FrontEnd/proxy.conf.json — đổi ở đây thì phải đổi cả bên đó,",
+    "nếu không Angular gọi API sẽ trượt hết.",
+    "Ứng dụng KHÔNG bật UseHttpsRedirection nên gọi qua http vẫn chạy bình thường."
+  ],
+
   "profiles": {
     "TaskApp.Api": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:5443;http://localhost:5080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://localhost:51393;http://localhost:51394"
+      }
+    },
+
+    "Chỉ HTTP (không cần chứng chỉ SSL)": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   }
 }
