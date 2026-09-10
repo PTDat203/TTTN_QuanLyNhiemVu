@@ -1,0 +1,610 @@
+--------------------------------------------------------------------------------
+-- 05_seed_nhiem_vu.sql
+-- Nap NHIEM VU, TIEN DO, BAO CAO va TEP DINH KEM.
+-- Chay bang tai khoan TASK_APP tren PDB XEPDB1, SAU KHI da chay 04_seed_nguoi_dung.sql
+-- (cac bang duoi day tham chieu khoa ngoai toi USERS).
+--
+-- Du lieu rai deu 6 trang thai cua TASK_STATUS_LOOKUP, trong do co nhiem vu
+-- HOAN_THANH dung han va tre han — de AI co du lieu tinh OnTimeScore.
+--
+-- TEN COT bam DUNG schema Oracle dang chay: TASK_REPORTS.REPORT_STATUS
+--   (ban cu dung STATUS — sai, se bao ORA-00904).
+--   TASKS.STATUS_CODE thi ban cu da dung san.
+--
+-- CHAY LAI DUOC: xoa 4 bang nay theo dung thu tu khoa ngoai roi nap lai.
+-- KHONG dung toi USERS / USER_SKILLS.
+--------------------------------------------------------------------------------
+
+--==============================================================================
+-- BUOC 0: Xoa du lieu nhiem vu cu (dung thu tu phu thuoc khoa ngoai)
+--==============================================================================
+DELETE FROM TASK_ATTACHMENTS;
+DELETE FROM TASK_REPORTS;
+DELETE FROM TASK_PROGRESS;
+DELETE FROM TASKS;
+COMMIT;
+
+--==============================================================================
+-- BUOC 4: TASKS - 44 nhiem vu rai deu 6 trang thai
+--   MOI_TAO         : 4   (chua co ASSIGNEE_ID)
+--   DA_GIAO         : 5
+--   DANG_THUC_HIEN  : 6
+--   CHO_XAC_NHAN    : 4
+--   YEU_CAU_BO_SUNG : 3
+--   HOAN_THANH      : 22  (co ca dung han va tre han de AI cham diem)
+--==============================================================================
+-- Nhiem vu 1: MOI_TAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (1, 'Khảo sát nhu cầu số hóa hồ sơ phòng Hành chính', 'Thu thập yêu cầu số hóa hồ sơ giấy của phòng Hành chính, lập danh mục loại hồ sơ và ước lượng khối lượng.', 1, NULL, 'MEDIUM', 'MOI_TAO', NULL, DATE '2026-10-15', TIMESTAMP '2026-09-05 09:00:00', TIMESTAMP '2026-09-05 09:00:00');
+-- Nhiem vu 2: MOI_TAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (2, 'Xây dựng bộ tiêu chí đánh giá nhà cung cấp phần mềm', 'Soạn bộ tiêu chí chấm điểm nhà cung cấp gồm năng lực kỹ thuật, giá, thời gian bảo hành và hỗ trợ sau bán.', 1, NULL, 'LOW', 'MOI_TAO', NULL, DATE '2026-11-02', TIMESTAMP '2026-09-05 09:00:00', TIMESTAMP '2026-09-05 09:00:00');
+-- Nhiem vu 3: MOI_TAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (3, 'Đề xuất phương án sao lưu cơ sở dữ liệu hằng đêm', 'Nghiên cứu phương án sao lưu tự động cho Oracle 21c XE, so sánh RMAN và Data Pump, đề xuất lịch chạy.', 2, NULL, 'HIGH', 'MOI_TAO', NULL, DATE '2026-10-05', TIMESTAMP '2026-09-05 09:00:00', TIMESTAMP '2026-09-05 09:00:00');
+-- Nhiem vu 4: MOI_TAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (4, 'Rà soát quyền truy cập hệ thống nội bộ quý IV', 'Đối chiếu danh sách tài khoản đang hoạt động với danh sách nhân sự, thu hồi quyền của tài khoản không còn dùng.', 2, NULL, 'MEDIUM', 'MOI_TAO', NULL, DATE '2026-10-20', TIMESTAMP '2026-09-05 09:00:00', TIMESTAMP '2026-09-05 09:00:00');
+-- Nhiem vu 5: DA_GIAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (5, 'Soạn tài liệu hướng dẫn sử dụng phân hệ giao nhiệm vụ', 'Viết tài liệu hướng dẫn cho người dùng cuối, kèm ảnh minh họa từng bước tạo và giao nhiệm vụ.', 1, 6, 'MEDIUM', 'DA_GIAO', DATE '2026-09-10', DATE '2026-09-30', TIMESTAMP '2026-09-07 08:30:00', TIMESTAMP '2026-09-12 08:30:00');
+-- Nhiem vu 6: DA_GIAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (6, 'Chuẩn hóa danh mục phòng ban trên hệ thống', 'Rà soát tên phòng ban đang dùng, gộp các bản ghi trùng và cập nhật mã phòng ban theo quy định mới.', 1, 5, 'LOW', 'DA_GIAO', DATE '2026-09-12', DATE '2026-10-10', TIMESTAMP '2026-09-09 08:30:00', TIMESTAMP '2026-09-14 08:30:00');
+-- Nhiem vu 7: DA_GIAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (7, 'Thiết kế màn hình thống kê tiến độ theo nhân sự', 'Dựng bản thiết kế màn hình thống kê số nhiệm vụ theo trạng thái và tỷ lệ hoàn thành đúng hạn của từng nhân sự.', 2, 4, 'HIGH', 'DA_GIAO', DATE '2026-09-11', DATE '2026-09-28', TIMESTAMP '2026-09-08 08:30:00', TIMESTAMP '2026-09-13 08:30:00');
+-- Nhiem vu 8: DA_GIAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (8, 'Viết kịch bản kiểm thử luồng báo cáo kết quả', 'Lập kịch bản kiểm thử cho luồng gửi báo cáo, xác nhận và yêu cầu bổ sung, bao gồm cả trường hợp lỗi.', 2, 8, 'MEDIUM', 'DA_GIAO', DATE '2026-09-14', DATE '2026-10-03', TIMESTAMP '2026-09-11 08:30:00', TIMESTAMP '2026-09-16 08:30:00');
+-- Nhiem vu 9: DA_GIAO
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (9, 'Tổng hợp số liệu đào tạo nội bộ 9 tháng đầu năm', 'Tổng hợp số buổi đào tạo, số lượt tham dự và chi phí theo từng phòng ban, xuất bảng tổng hợp.', 1, 10, 'LOW', 'DA_GIAO', DATE '2026-09-15', DATE '2026-10-12', TIMESTAMP '2026-09-12 08:30:00', TIMESTAMP '2026-09-17 08:30:00');
+-- Nhiem vu 10: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (10, 'Xây dựng API đăng nhập và phân quyền theo vai trò', 'Hiện thực đăng nhập trả JWT, phân quyền MANAGER và EMPLOYEE, kiểm quyền ở phía máy chủ.', 1, 3, 'HIGH', 'DANG_THUC_HIEN', DATE '2026-08-25', DATE '2026-09-20', TIMESTAMP '2026-08-22 08:30:00', TIMESTAMP '2026-08-27 08:30:00');
+-- Nhiem vu 11: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (11, 'Chuyển đổi dữ liệu nhân sự từ tệp Excel sang Oracle', 'Làm sạch tệp Excel nhân sự, ánh xạ cột sang bảng USERS và nạp bằng script có kiểm tra trùng lặp.', 1, 5, 'MEDIUM', 'DANG_THUC_HIEN', DATE '2026-08-20', DATE '2026-09-18', TIMESTAMP '2026-08-17 08:30:00', TIMESTAMP '2026-08-22 08:30:00');
+-- Nhiem vu 12: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (12, 'Dựng màn hình danh sách nhiệm vụ có bộ lọc nâng cao', 'Màn hình danh sách hỗ trợ lọc theo trạng thái, mức ưu tiên, người thực hiện và khoảng hạn hoàn thành.', 2, 4, 'HIGH', 'DANG_THUC_HIEN', DATE '2026-08-28', DATE '2026-09-25', TIMESTAMP '2026-08-25 08:30:00', TIMESTAMP '2026-08-30 08:30:00');
+-- Nhiem vu 13: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (13, 'Viết script thống kê tỷ lệ hoàn thành đúng hạn', 'Script Python đọc dữ liệu nhiệm vụ, tính tỷ lệ đúng hạn theo từng nhân sự và xuất tệp CSV.', 2, 7, 'MEDIUM', 'DANG_THUC_HIEN', DATE '2026-09-01', DATE '2026-09-22', TIMESTAMP '2026-08-29 08:30:00', TIMESTAMP '2026-09-03 08:30:00');
+-- Nhiem vu 14: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (14, 'Rà soát và cập nhật quy trình lưu trữ văn bản đến', 'Đối chiếu quy trình hiện hành với quy định mới, đề xuất điều chỉnh bước tiếp nhận và phân phối văn bản.', 1, 6, 'LOW', 'DANG_THUC_HIEN', DATE '2026-08-18', DATE '2026-09-26', TIMESTAMP '2026-08-15 08:30:00', TIMESTAMP '2026-08-20 08:30:00');
+-- Nhiem vu 15: DANG_THUC_HIEN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (15, 'Kiểm thử hồi quy trước bản phát hành tháng 9', 'Chạy lại toàn bộ kịch bản kiểm thử của các phân hệ đã bàn giao, ghi nhận và phân loại lỗi phát sinh.', 2, 9, 'HIGH', 'DANG_THUC_HIEN', DATE '2026-09-02', DATE '2026-09-19', TIMESTAMP '2026-08-30 08:30:00', TIMESTAMP '2026-09-04 08:30:00');
+-- Nhiem vu 16: CHO_XAC_NHAN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (16, 'Tối ưu truy vấn danh sách nhiệm vụ quá hạn', 'Phân tích kế hoạch thực thi, bổ sung chỉ mục cần thiết và viết lại truy vấn để giảm thời gian phản hồi.', 1, 3, 'HIGH', 'CHO_XAC_NHAN', DATE '2026-08-10', DATE '2026-09-05', TIMESTAMP '2026-08-07 08:30:00', TIMESTAMP '2026-08-12 08:30:00');
+-- Nhiem vu 17: CHO_XAC_NHAN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (17, 'Biên soạn quy chế quản lý tài liệu nội bộ', 'Soạn dự thảo quy chế gồm phân loại tài liệu, thời hạn lưu trữ và trách nhiệm của từng bộ phận.', 1, 6, 'MEDIUM', 'CHO_XAC_NHAN', DATE '2026-08-05', DATE '2026-09-08', TIMESTAMP '2026-08-02 08:30:00', TIMESTAMP '2026-08-07 08:30:00');
+-- Nhiem vu 18: CHO_XAC_NHAN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (18, 'Phân tích dữ liệu khối lượng công việc theo nhân sự', 'Thống kê số nhiệm vụ đang xử lý của từng nhân sự, chỉ ra các trường hợp quá tải và đề xuất điều chuyển.', 2, 10, 'MEDIUM', 'CHO_XAC_NHAN', DATE '2026-08-12', DATE '2026-09-06', TIMESTAMP '2026-08-09 08:30:00', TIMESTAMP '2026-08-14 08:30:00');
+-- Nhiem vu 19: CHO_XAC_NHAN
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (19, 'Chuẩn hóa thông điệp lỗi trả về cho giao diện', 'Gom các thông điệp lỗi rời rạc về một chỗ, thống nhất mã lỗi và nội dung tiếng Việt trả cho giao diện.', 2, 9, 'LOW', 'CHO_XAC_NHAN', DATE '2026-08-15', DATE '2026-09-09', TIMESTAMP '2026-08-12 08:30:00', TIMESTAMP '2026-08-17 08:30:00');
+-- Nhiem vu 20: YEU_CAU_BO_SUNG
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (20, 'Lập báo cáo tổng kết hoạt động quý III', 'Tổng hợp kết quả thực hiện nhiệm vụ quý III, so sánh với chỉ tiêu và nêu nguyên nhân chưa đạt.', 1, 6, 'HIGH', 'YEU_CAU_BO_SUNG', DATE '2026-08-01', DATE '2026-09-12', TIMESTAMP '2026-07-29 08:30:00', TIMESTAMP '2026-08-03 08:30:00');
+-- Nhiem vu 21: YEU_CAU_BO_SUNG
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (21, 'Viết tài liệu mô tả cấu trúc cơ sở dữ liệu', 'Mô tả 7 bảng nghiệp vụ, quan hệ khóa ngoại và ý nghĩa từng cột để bàn giao cho nhóm bảo trì.', 1, 3, 'MEDIUM', 'YEU_CAU_BO_SUNG', DATE '2026-08-06', DATE '2026-09-15', TIMESTAMP '2026-08-03 08:30:00', TIMESTAMP '2026-08-08 08:30:00');
+-- Nhiem vu 22: YEU_CAU_BO_SUNG
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (22, 'Kiểm thử chức năng đính kèm tệp cho báo cáo', 'Kiểm thử tải lên, tải xuống và giới hạn dung lượng tệp đính kèm, kể cả tệp có tên tiếng Việt.', 2, 8, 'MEDIUM', 'YEU_CAU_BO_SUNG', DATE '2026-08-08', DATE '2026-09-10', TIMESTAMP '2026-08-05 08:30:00', TIMESTAMP '2026-08-10 08:30:00');
+-- Nhiem vu 23: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (23, 'Cài đặt và cấu hình Oracle 21c XE cho môi trường phát triển', 'Cài Oracle 21c XE, mở PDB XEPDB1, cấu hình listener và kiểm chứng kết nối từ DBeaver.', 1, 3, 'HIGH', 'HOAN_THANH', DATE '2026-01-05', DATE '2026-01-20', TIMESTAMP '2026-01-02 08:30:00', TIMESTAMP '2026-01-18 16:30:00');
+-- Nhiem vu 24: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (24, 'Tạo schema TASK_APP và cấp quyền cho ứng dụng', 'Tạo user TASK_APP trong PDB, cấp quyền tối thiểu và cấp quota tablespace cho phép ghi dữ liệu.', 1, 3, 'HIGH', 'HOAN_THANH', DATE '2026-01-06', DATE '2026-01-22', TIMESTAMP '2026-01-03 08:30:00', TIMESTAMP '2026-01-21 10:15:00');
+-- Nhiem vu 25: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (25, 'Thiết kế lược đồ cơ sở dữ liệu 7 bảng', 'Chốt danh sách bảng, khóa chính, khóa ngoại và ràng buộc kiểm tra cho toàn bộ phân hệ nhiệm vụ.', 1, 5, 'HIGH', 'HOAN_THANH', DATE '2026-01-12', DATE '2026-02-05', TIMESTAMP '2026-01-09 08:30:00', TIMESTAMP '2026-02-09 17:45:00');
+-- Nhiem vu 26: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (26, 'Viết script tạo bảng chạy lại được nhiều lần', 'Bọc từng lệnh tạo bảng trong khối xử lý ngoại lệ để script chạy lại không báo lỗi trùng đối tượng.', 1, 3, 'MEDIUM', 'HOAN_THANH', DATE '2026-02-02', DATE '2026-02-18', TIMESTAMP '2026-01-30 08:30:00', TIMESTAMP '2026-02-17 11:20:00');
+-- Nhiem vu 27: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (27, 'Nạp danh mục trạng thái nhiệm vụ', 'Nạp 6 trạng thái theo đúng vòng đời nghiệp vụ, có thứ tự sắp xếp để hiển thị trên giao diện.', 1, 9, 'LOW', 'HOAN_THANH', DATE '2026-02-10', DATE '2026-02-24', TIMESTAMP '2026-02-07 08:30:00', TIMESTAMP '2026-02-23 09:40:00');
+-- Nhiem vu 28: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (28, 'Khảo sát quy trình giao nhiệm vụ hiện hành', 'Phỏng vấn cán bộ ba phòng, ghi lại quy trình đang dùng và các điểm nghẽn cần cải tiến.', 2, 6, 'MEDIUM', 'HOAN_THANH', DATE '2026-01-08', DATE '2026-01-30', TIMESTAMP '2026-01-05 08:30:00', TIMESTAMP '2026-01-29 15:00:00');
+-- Nhiem vu 29: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (29, 'Lập kế hoạch triển khai phân hệ quản lý nhiệm vụ', 'Chia giai đoạn triển khai, phân bổ nhân sự và ước lượng thời gian cho từng nhóm chức năng.', 2, 10, 'HIGH', 'HOAN_THANH', DATE '2026-01-15', DATE '2026-02-06', TIMESTAMP '2026-01-12 08:30:00', TIMESTAMP '2026-02-12 14:10:00');
+-- Nhiem vu 30: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (30, 'Dựng khung giao diện Angular cho ứng dụng', 'Khởi tạo dự án Angular, dựng bố cục chung, thanh điều hướng và cơ chế gọi API có kèm mã thông báo.', 2, 4, 'HIGH', 'HOAN_THANH', DATE '2026-02-09', DATE '2026-03-06', TIMESTAMP '2026-02-06 08:30:00', TIMESTAMP '2026-03-05 16:50:00');
+-- Nhiem vu 31: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (31, 'Xây dựng màn hình đăng nhập', 'Màn hình đăng nhập có kiểm tra dữ liệu nhập, hiển thị lỗi tiếng Việt và ghi nhớ phiên làm việc.', 2, 4, 'MEDIUM', 'HOAN_THANH', DATE '2026-03-02', DATE '2026-03-18', TIMESTAMP '2026-02-27 08:30:00', TIMESTAMP '2026-03-17 10:25:00');
+-- Nhiem vu 32: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (32, 'Hiện thực chức năng tạo nhiệm vụ', 'API và giao diện tạo nhiệm vụ mới, mặc định trạng thái mới tạo và ghi nhận người tạo.', 1, 3, 'HIGH', 'HOAN_THANH', DATE '2026-03-09', DATE '2026-03-27', TIMESTAMP '2026-03-06 08:30:00', TIMESTAMP '2026-03-26 17:05:00');
+-- Nhiem vu 33: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (33, 'Hiện thực chức năng giao nhiệm vụ cho nhân sự', 'Cho phép người quản lý chọn người thực hiện, chuyển trạng thái sang đã giao và ghi lại thời điểm giao.', 1, 3, 'HIGH', 'HOAN_THANH', DATE '2026-03-23', DATE '2026-04-10', TIMESTAMP '2026-03-20 08:30:00', TIMESTAMP '2026-04-15 11:35:00');
+-- Nhiem vu 34: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (34, 'Hiện thực cập nhật tiến độ nhiệm vụ', 'Mỗi lần cập nhật ghi thêm một dòng lịch sử, không ghi đè dữ liệu tiến độ cũ.', 1, 9, 'MEDIUM', 'HOAN_THANH', DATE '2026-04-06', DATE '2026-04-24', TIMESTAMP '2026-04-03 08:30:00', TIMESTAMP '2026-04-23 15:45:00');
+-- Nhiem vu 35: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (35, 'Hiện thực luồng gửi và xác nhận báo cáo', 'Người thực hiện gửi báo cáo, người quản lý xác nhận hoặc từ chối kèm ghi chú đánh giá.', 1, 5, 'HIGH', 'HOAN_THANH', DATE '2026-04-20', DATE '2026-05-12', TIMESTAMP '2026-04-17 08:30:00', TIMESTAMP '2026-05-11 16:20:00');
+-- Nhiem vu 36: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (36, 'Bổ sung chức năng đính kèm tệp cho nhiệm vụ', 'Lưu thông tin tệp vào cơ sở dữ liệu, tệp thật lưu trên ổ đĩa theo thư mục tách theo nhiệm vụ.', 2, 5, 'MEDIUM', 'HOAN_THANH', DATE '2026-05-04', DATE '2026-05-22', TIMESTAMP '2026-05-01 08:30:00', TIMESTAMP '2026-05-27 09:30:00');
+-- Nhiem vu 37: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (37, 'Chuẩn hóa dữ liệu kỹ năng nhân sự', 'Thu thập và chuẩn hóa danh mục kỹ năng, gán mức thành thạo từ 1 đến 5 cho từng nhân sự.', 2, 10, 'MEDIUM', 'HOAN_THANH', DATE '2026-05-11', DATE '2026-05-29', TIMESTAMP '2026-05-08 08:30:00', TIMESTAMP '2026-05-28 14:00:00');
+-- Nhiem vu 38: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (38, 'Xây dựng thuật toán chấm điểm gợi ý người thực hiện', 'Tính điểm phù hợp dựa trên kỹ năng, lịch sử hoàn thành đúng hạn và khối lượng đang xử lý.', 2, 10, 'HIGH', 'HOAN_THANH', DATE '2026-05-25', DATE '2026-06-19', TIMESTAMP '2026-05-22 08:30:00', TIMESTAMP '2026-06-18 17:40:00');
+-- Nhiem vu 39: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (39, 'Kiểm thử chức năng tạo và giao nhiệm vụ', 'Chạy 24 kịch bản kiểm thử bao gồm trường hợp thiếu dữ liệu, sai vai trò và sai chuyển trạng thái.', 2, 8, 'MEDIUM', 'HOAN_THANH', DATE '2026-06-01', DATE '2026-06-17', TIMESTAMP '2026-05-29 08:30:00', TIMESTAMP '2026-06-22 10:05:00');
+-- Nhiem vu 40: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (40, 'Kiểm thử hiệu năng danh sách nhiệm vụ', 'Nạp 50 nghìn dòng dữ liệu giả lập, đo thời gian phản hồi và ghi nhận truy vấn chậm.', 2, 9, 'LOW', 'HOAN_THANH', DATE '2026-06-15', DATE '2026-07-03', TIMESTAMP '2026-06-12 08:30:00', TIMESTAMP '2026-07-02 16:15:00');
+-- Nhiem vu 41: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (41, 'Soạn tài liệu bàn giao giai đoạn 1', 'Tập hợp tài liệu thiết kế, hướng dẫn cài đặt và biên bản kiểm thử thành bộ hồ sơ bàn giao.', 1, 6, 'MEDIUM', 'HOAN_THANH', DATE '2026-06-22', DATE '2026-07-15', TIMESTAMP '2026-06-19 08:30:00', TIMESTAMP '2026-07-14 15:30:00');
+-- Nhiem vu 42: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (42, 'Đào tạo người dùng phòng Kế hoạch', 'Tổ chức hai buổi hướng dẫn sử dụng cho 18 cán bộ, thu thập góp ý và ghi biên bản.', 1, 6, 'LOW', 'HOAN_THANH', DATE '2026-07-06', DATE '2026-07-24', TIMESTAMP '2026-07-03 08:30:00', TIMESTAMP '2026-07-29 11:00:00');
+-- Nhiem vu 43: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (43, 'Xử lý lỗi hiển thị tiếng Việt trên báo cáo xuất Excel', 'Sửa lỗi tệp Excel xuất ra bị mất dấu tiếng Việt do sai bộ ký tự khi ghi tệp.', 2, 7, 'HIGH', 'HOAN_THANH', DATE '2026-07-13', DATE '2026-07-27', TIMESTAMP '2026-07-10 08:30:00', TIMESTAMP '2026-07-24 14:45:00');
+-- Nhiem vu 44: HOAN_THANH
+INSERT INTO TASKS (ID, TITLE, DESCRIPTION, CREATOR_ID, ASSIGNEE_ID, PRIORITY, STATUS_CODE,
+                   START_DATE, DUE_DATE, CREATED_AT, UPDATED_AT)
+VALUES (44, 'Rà soát nhật ký hệ thống tháng 8', 'Đọc nhật ký lỗi tháng 8, phân loại theo mức độ và lập danh sách lỗi cần xử lý trong tháng 9.', 2, 7, 'MEDIUM', 'HOAN_THANH', DATE '2026-08-03', DATE '2026-08-21', TIMESTAMP '2026-07-31 08:30:00', TIMESTAMP '2026-08-26 16:00:00');
+COMMIT;
+
+--==============================================================================
+-- BUOC 5: TASK_PROGRESS - lich su cap nhat tien do
+--   Nhiem vu MOI_TAO va DA_GIAO chua co dong tien do nao.
+--==============================================================================
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (1, 10, 3, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-27 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (2, 10, 3, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-07 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (3, 11, 5, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (4, 11, 5, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-03 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (5, 12, 4, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-30 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (6, 12, 4, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (7, 13, 7, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-09-03 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (8, 13, 7, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (9, 14, 6, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-20 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (10, 14, 6, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-06 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (11, 15, 9, 20, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-09-04 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (12, 15, 9, 55, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-09-10 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (13, 16, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-13 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (14, 16, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-08-23 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (15, 16, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-09-03 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (16, 17, 6, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-08 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (17, 17, 6, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-08-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (18, 17, 6, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-09-06 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (19, 18, 10, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-15 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (20, 18, 10, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-08-24 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (21, 18, 10, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-09-04 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (22, 19, 9, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-18 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (23, 19, 9, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-08-27 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (24, 19, 9, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-09-07 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (25, 20, 6, 35, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-04 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (26, 20, 6, 80, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-08-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (27, 20, 6, 90, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-09-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (28, 21, 3, 35, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-09 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (29, 21, 3, 80, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-08-26 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (30, 21, 3, 90, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-09-14 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (31, 22, 8, 35, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (32, 22, 8, 80, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-08-24 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (33, 22, 8, 90, 'Đã xử lý xong nội dung chính, đang rà soát lại kết quả.', TIMESTAMP '2026-09-09 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (34, 23, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-01-09 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (35, 23, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-01-13 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (36, 23, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-01-17 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (37, 24, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-01-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (38, 24, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-01-16 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (39, 24, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-01-20 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (40, 25, 5, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-01-21 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (41, 25, 5, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-01-30 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (42, 25, 5, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-02-08 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (43, 26, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-02-07 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (44, 26, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-02-12 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (45, 26, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-02-16 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (46, 27, 9, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-02-14 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (47, 27, 9, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-02-18 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (48, 27, 9, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-02-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (49, 28, 6, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-01-15 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (50, 28, 6, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-01-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (51, 28, 6, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-01-28 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (52, 29, 10, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-01-24 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (53, 29, 10, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-02-02 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (54, 29, 10, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-02-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (55, 30, 4, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-02-17 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (56, 30, 4, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-02-25 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (57, 30, 4, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-03-04 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (58, 31, 4, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-03-07 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (59, 31, 4, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-03-12 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (60, 31, 4, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-03-16 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (61, 32, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-03-14 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (62, 32, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-03-20 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (63, 32, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-03-25 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (64, 33, 3, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-03-30 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (65, 33, 3, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-04-07 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (66, 33, 3, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-04-14 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (67, 34, 9, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-04-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (68, 34, 9, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-04-17 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (69, 34, 9, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-04-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (70, 35, 5, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-04-27 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (71, 35, 5, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-05-04 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (72, 35, 5, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-05-10 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (73, 36, 5, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-05-11 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (74, 36, 5, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-05-19 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (75, 36, 5, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-05-26 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (76, 37, 10, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-05-16 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (77, 37, 10, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-05-22 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (78, 37, 10, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-05-27 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (79, 38, 10, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-06-02 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (80, 38, 10, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-06-10 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (81, 38, 10, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-06-17 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (82, 39, 8, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-06-08 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (83, 39, 8, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-06-15 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (84, 39, 8, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-06-21 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (85, 40, 9, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-06-20 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (86, 40, 9, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-06-26 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (87, 40, 9, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-07-01 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (88, 41, 6, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-06-29 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (89, 41, 6, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-07-06 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (90, 41, 6, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-07-13 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (91, 42, 6, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-07-13 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (92, 42, 6, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-07-21 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (93, 42, 6, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-07-28 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (94, 43, 7, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-07-16 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (95, 43, 7, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-07-20 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (96, 43, 7, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-07-23 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (97, 44, 7, 30, 'Đã tiếp nhận nhiệm vụ và lập kế hoạch chi tiết cho từng bước.', TIMESTAMP '2026-08-10 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (98, 44, 7, 70, 'Đã hoàn thành phần chuẩn bị dữ liệu và đang xử lý phần chính.', TIMESTAMP '2026-08-18 09:30:00');
+INSERT INTO TASK_PROGRESS (ID, TASK_ID, USER_ID, PROGRESS_PERCENT, CONTENT, CREATED_AT)
+VALUES (99, 44, 7, 100, 'Đã hoàn tất toàn bộ nội dung, chuẩn bị gửi báo cáo kết quả.', TIMESTAMP '2026-08-25 09:30:00');
+COMMIT;
+
+--==============================================================================
+-- BUOC 6: TASK_REPORTS - bao cao ket qua
+--   CHO_XAC_NHAN    -> bao cao STATUS = CHO_XAC_NHAN, chua co nguoi duyet
+--   YEU_CAU_BO_SUNG -> bao cao STATUS = TU_CHOI kem ghi chu danh gia
+--   HOAN_THANH      -> bao cao STATUS = DA_XAC_NHAN (mot so co them lan bi tu choi truoc do)
+--==============================================================================
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (1, 16, 3, 'Báo cáo kết quả nhiệm vụ: đã hoàn tất toàn bộ nội dung được giao, kèm theo tài liệu mô tả cách làm và kết quả kiểm tra. Kính đề nghị lãnh đạo xem xét xác nhận.', 'CHO_XAC_NHAN', NULL, NULL, TIMESTAMP '2026-09-03 16:00:00', NULL);
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (2, 17, 6, 'Báo cáo kết quả nhiệm vụ: đã hoàn tất toàn bộ nội dung được giao, kèm theo tài liệu mô tả cách làm và kết quả kiểm tra. Kính đề nghị lãnh đạo xem xét xác nhận.', 'CHO_XAC_NHAN', NULL, NULL, TIMESTAMP '2026-09-06 16:00:00', NULL);
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (3, 18, 10, 'Báo cáo kết quả nhiệm vụ: đã hoàn tất toàn bộ nội dung được giao, kèm theo tài liệu mô tả cách làm và kết quả kiểm tra. Kính đề nghị lãnh đạo xem xét xác nhận.', 'CHO_XAC_NHAN', NULL, NULL, TIMESTAMP '2026-09-04 16:00:00', NULL);
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (4, 19, 9, 'Báo cáo kết quả nhiệm vụ: đã hoàn tất toàn bộ nội dung được giao, kèm theo tài liệu mô tả cách làm và kết quả kiểm tra. Kính đề nghị lãnh đạo xem xét xác nhận.', 'CHO_XAC_NHAN', NULL, NULL, TIMESTAMP '2026-09-07 16:00:00', NULL);
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (5, 20, 6, 'Báo cáo kết quả lần 1: đã thực hiện các nội dung chính của nhiệm vụ và tổng hợp kết quả.', 'TU_CHOI', 1, 'Kết quả chưa đạt yêu cầu: còn thiếu số liệu đối chiếu và chưa nêu rõ nguyên nhân chênh lệch. Đề nghị bổ sung rồi gửi lại báo cáo.', TIMESTAMP '2026-09-08 15:00:00', TIMESTAMP '2026-09-09 17:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (6, 21, 3, 'Báo cáo kết quả lần 1: đã thực hiện các nội dung chính của nhiệm vụ và tổng hợp kết quả.', 'TU_CHOI', 1, 'Kết quả chưa đạt yêu cầu: còn thiếu số liệu đối chiếu và chưa nêu rõ nguyên nhân chênh lệch. Đề nghị bổ sung rồi gửi lại báo cáo.', TIMESTAMP '2026-09-11 15:00:00', TIMESTAMP '2026-09-12 17:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (7, 22, 8, 'Báo cáo kết quả lần 1: đã thực hiện các nội dung chính của nhiệm vụ và tổng hợp kết quả.', 'TU_CHOI', 2, 'Kết quả chưa đạt yêu cầu: còn thiếu số liệu đối chiếu và chưa nêu rõ nguyên nhân chênh lệch. Đề nghị bổ sung rồi gửi lại báo cáo.', TIMESTAMP '2026-09-06 15:00:00', TIMESTAMP '2026-09-07 17:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (8, 23, 3, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-01-16 10:30:00', TIMESTAMP '2026-01-18 16:30:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (9, 24, 3, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-01-19 04:15:00', TIMESTAMP '2026-01-21 10:15:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (10, 25, 5, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-02-07 11:45:00', TIMESTAMP '2026-02-09 17:45:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (11, 26, 3, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-02-15 05:20:00', TIMESTAMP '2026-02-17 11:20:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (12, 27, 9, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-02-21 03:40:00', TIMESTAMP '2026-02-23 09:40:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (13, 28, 6, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-01-27 09:00:00', TIMESTAMP '2026-01-29 15:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (14, 29, 10, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-02-10 08:10:00', TIMESTAMP '2026-02-12 14:10:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (15, 30, 4, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-03-03 10:50:00', TIMESTAMP '2026-03-05 16:50:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (16, 31, 4, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-03-15 04:25:00', TIMESTAMP '2026-03-17 10:25:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (17, 32, 3, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-03-24 11:05:00', TIMESTAMP '2026-03-26 17:05:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (18, 33, 3, 'Báo cáo kết quả lần 1: đã hoàn thành phần lớn nội dung nhưng chưa kịp rà soát toàn bộ.', 'TU_CHOI', 1, 'Chưa đạt: cần rà soát lại số liệu và bổ sung phần đánh giá kết quả trước khi nghiệm thu.', TIMESTAMP '2026-04-06 08:35:00', TIMESTAMP '2026-04-07 08:35:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (19, 33, 3, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-04-13 05:35:00', TIMESTAMP '2026-04-15 11:35:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (20, 34, 9, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-04-21 09:45:00', TIMESTAMP '2026-04-23 15:45:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (21, 35, 5, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-05-09 10:20:00', TIMESTAMP '2026-05-11 16:20:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (22, 36, 5, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-05-25 03:30:00', TIMESTAMP '2026-05-27 09:30:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (23, 37, 10, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-05-26 08:00:00', TIMESTAMP '2026-05-28 14:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (24, 38, 10, 'Báo cáo kết quả lần 1: đã hoàn thành phần lớn nội dung nhưng chưa kịp rà soát toàn bộ.', 'TU_CHOI', 2, 'Chưa đạt: cần rà soát lại số liệu và bổ sung phần đánh giá kết quả trước khi nghiệm thu.', TIMESTAMP '2026-06-09 14:40:00', TIMESTAMP '2026-06-10 14:40:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (25, 38, 10, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-06-16 11:40:00', TIMESTAMP '2026-06-18 17:40:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (26, 39, 8, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-06-20 04:05:00', TIMESTAMP '2026-06-22 10:05:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (27, 40, 9, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-06-30 10:15:00', TIMESTAMP '2026-07-02 16:15:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (28, 41, 6, 'Báo cáo kết quả lần 1: đã hoàn thành phần lớn nội dung nhưng chưa kịp rà soát toàn bộ.', 'TU_CHOI', 1, 'Chưa đạt: cần rà soát lại số liệu và bổ sung phần đánh giá kết quả trước khi nghiệm thu.', TIMESTAMP '2026-07-05 12:30:00', TIMESTAMP '2026-07-06 12:30:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (29, 41, 6, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-07-12 09:30:00', TIMESTAMP '2026-07-14 15:30:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (30, 42, 6, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 1, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-07-27 05:00:00', TIMESTAMP '2026-07-29 11:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (31, 43, 7, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-07-22 08:45:00', TIMESTAMP '2026-07-24 14:45:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (32, 44, 7, 'Báo cáo kết quả lần 1: đã hoàn thành phần lớn nội dung nhưng chưa kịp rà soát toàn bộ.', 'TU_CHOI', 2, 'Chưa đạt: cần rà soát lại số liệu và bổ sung phần đánh giá kết quả trước khi nghiệm thu.', TIMESTAMP '2026-08-17 13:00:00', TIMESTAMP '2026-08-18 13:00:00');
+INSERT INTO TASK_REPORTS (ID, TASK_ID, REPORTER_ID, CONTENT, REPORT_STATUS, REVIEWER_ID, REVIEW_NOTE,
+                          CREATED_AT, REVIEWED_AT)
+VALUES (33, 44, 7, 'Báo cáo kết quả cuối cùng: đã hoàn thành đầy đủ nội dung nhiệm vụ, có tài liệu kèm theo và đã kiểm tra lại kết quả trước khi gửi.', 'DA_XAC_NHAN', 2, 'Kết quả đạt yêu cầu. Xác nhận hoàn thành nhiệm vụ.', TIMESTAMP '2026-08-24 10:00:00', TIMESTAMP '2026-08-26 16:00:00');
+COMMIT;
+
+--==============================================================================
+-- BUOC 7: TASK_ATTACHMENTS - metadata tep dinh kem
+--   REPORT_ID NULL       => tep dinh kem cho nhiem vu
+--   REPORT_ID co gia tri => tep la tai lieu cua mot bao cao
+--==============================================================================
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (1, 10, NULL, 'yeu-cau-nghiep-vu-dang-nhap.docx', 'uploads/2026/08/yeu-cau-nghiep-vu-dang-nhap.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 184320, 3, TIMESTAMP '2026-08-23 10:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (2, 11, NULL, 'danh-sach-nhan-su.xlsx', 'uploads/2026/08/danh-sach-nhan-su.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 265216, 5, TIMESTAMP '2026-08-18 10:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (3, 12, NULL, 'ban-thiet-ke-man-hinh-danh-sach.png', 'uploads/2026/08/ban-thiet-ke-man-hinh-danh-sach.png', 'image/png', 512000, 4, TIMESTAMP '2026-08-26 10:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (4, 16, 1, 'bao-cao-toi-uu-truy-van.pdf', 'uploads/2026/09/bao-cao-toi-uu-truy-van.pdf', 'application/pdf', 348160, 3, TIMESTAMP '2026-08-12 08:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (5, 17, 2, 'du-thao-quy-che-quan-ly-tai-lieu.docx', 'uploads/2026/09/du-thao-quy-che-quan-ly-tai-lieu.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 226304, 6, TIMESTAMP '2026-08-07 08:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (6, 18, 3, 'thong-ke-khoi-luong-cong-viec.xlsx', 'uploads/2026/09/thong-ke-khoi-luong-cong-viec.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 143360, 10, TIMESTAMP '2026-08-14 08:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (7, 20, 5, 'bao-cao-quy-3-ban-nhap.docx', 'uploads/2026/09/bao-cao-quy-3-ban-nhap.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 198656, 6, TIMESTAMP '2026-08-03 08:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (8, 23, 8, 'bien-ban-cai-dat-oracle.pdf', 'uploads/2026/01/bien-ban-cai-dat-oracle.pdf', 'application/pdf', 312320, 3, TIMESTAMP '2026-01-18 16:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (9, 25, 10, 'luoc-do-co-so-du-lieu.png', 'uploads/2026/02/luoc-do-co-so-du-lieu.png', 'image/png', 640000, 5, TIMESTAMP '2026-02-09 17:45:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (10, 33, 19, 'tai-lieu-mo-ta-thuat-toan-cham-diem.pdf', 'uploads/2026/06/tai-lieu-mo-ta-thuat-toan-cham-diem.pdf', 'application/pdf', 421888, 3, TIMESTAMP '2026-04-15 11:35:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (11, 41, 29, 'ho-so-ban-giao-giai-doan-1.zip', 'uploads/2026/07/ho-so-ban-giao-giai-doan-1.zip', 'application/zip', 2097152, 6, TIMESTAMP '2026-07-14 15:30:00');
+INSERT INTO TASK_ATTACHMENTS (ID, TASK_ID, REPORT_ID, FILE_NAME, FILE_PATH, FILE_TYPE,
+                             FILE_SIZE, UPLOADED_BY, UPLOADED_AT)
+VALUES (12, 42, 30, 'bien-ban-dao-tao-phong-ke-hoach.pdf', 'uploads/2026/07/bien-ban-dao-tao-phong-ke-hoach.pdf', 'application/pdf', 276480, 6, TIMESTAMP '2026-07-29 11:00:00');
+COMMIT;
+
+--==============================================================================
+-- Dat lai bo dem IDENTITY cua 4 bang vua nap (xem giai thich o 04)
+--==============================================================================
+ALTER TABLE TASKS            MODIFY (ID GENERATED BY DEFAULT AS IDENTITY (START WITH LIMIT VALUE));
+ALTER TABLE TASK_PROGRESS    MODIFY (ID GENERATED BY DEFAULT AS IDENTITY (START WITH LIMIT VALUE));
+ALTER TABLE TASK_REPORTS     MODIFY (ID GENERATED BY DEFAULT AS IDENTITY (START WITH LIMIT VALUE));
+ALTER TABLE TASK_ATTACHMENTS MODIFY (ID GENERATED BY DEFAULT AS IDENTITY (START WITH LIMIT VALUE));
+COMMIT;
+
+--==============================================================================
+-- BUOC 9: Kiem chung du lieu vua nap
+--==============================================================================
+-- So dong tung bang
+SELECT 'USERS' AS BANG, COUNT(*) AS SO_DONG FROM USERS
+UNION ALL SELECT 'USER_SKILLS',      COUNT(*) FROM USER_SKILLS
+UNION ALL SELECT 'TASKS',            COUNT(*) FROM TASKS
+UNION ALL SELECT 'TASK_PROGRESS',    COUNT(*) FROM TASK_PROGRESS
+UNION ALL SELECT 'TASK_REPORTS',     COUNT(*) FROM TASK_REPORTS
+UNION ALL SELECT 'TASK_ATTACHMENTS', COUNT(*) FROM TASK_ATTACHMENTS;
+
+-- Phan bo nhiem vu theo trang thai
+SELECT l.SORT_ORDER, l.CODE, l.NAME, COUNT(t.ID) AS SO_NHIEM_VU
+FROM   TASK_STATUS_LOOKUP l
+       LEFT JOIN TASKS t ON t.STATUS_CODE = l.CODE
+GROUP  BY l.SORT_ORDER, l.CODE, l.NAME
+ORDER  BY l.SORT_ORDER;
+
+-- Ty le hoan thanh dung han cua tung nhan vien (du lieu cho AI cham diem)
+SELECT u.FULL_NAME,
+       COUNT(*) AS SO_NHIEM_VU_HOAN_THANH,
+       SUM(CASE WHEN TRUNC(r.REVIEWED_AT) <= t.DUE_DATE THEN 1 ELSE 0 END) AS SO_DUNG_HAN,
+       SUM(CASE WHEN TRUNC(r.REVIEWED_AT) >  t.DUE_DATE THEN 1 ELSE 0 END) AS SO_TRE_HAN
+FROM   TASKS t
+       JOIN USERS u        ON u.ID = t.ASSIGNEE_ID
+       JOIN TASK_REPORTS r ON r.TASK_ID = t.ID AND r.REPORT_STATUS = 'DA_XAC_NHAN'
+WHERE  t.STATUS_CODE = 'HOAN_THANH'
+GROUP  BY u.FULL_NAME
+ORDER  BY u.FULL_NAME;
+
+-- Kiem tra tieng Viet khong bi vo: SO_BYTE phai lon hon SO_KY_TU
+SELECT FULL_NAME, LENGTH(FULL_NAME) AS SO_KY_TU, LENGTHB(FULL_NAME) AS SO_BYTE
+FROM   USERS
+ORDER  BY ID;

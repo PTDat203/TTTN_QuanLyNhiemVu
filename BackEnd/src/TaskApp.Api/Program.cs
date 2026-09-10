@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using TaskApp.Api.Auth;
 using TaskApp.Api.Common;
+using TaskApp.Api.Services;
 using TaskApp.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +45,29 @@ builder.Services.AddDbContext<TaskDbContext>(options =>
 });
 
 // ---------------------------------------------------------------------------
+// Xac thuc JWT
+// ---------------------------------------------------------------------------
+builder.Services.Configure<CauHinhJwt>(builder.Configuration.GetSection(CauHinhJwt.Muc));
+
+var cauHinhJwt = builder.Configuration.GetSection(CauHinhJwt.Muc).Get<CauHinhJwt>() ?? new CauHinhJwt();
+// Dung ngay luc khoi dong neu thieu khoa ky, thay vi de loi mo ho o lan dang nhap dau tien.
+cauHinhJwt.KiemTra();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
+    {
+        o.TokenValidationParameters = JwtService.TaoThamSoKiemTra(cauHinhJwt);
+        o.MapInboundClaims = false;   // giu nguyen ten claim tu dat, khong bi doi sang URI dai
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddScoped<NguoiDungHienTai>();
+builder.Services.AddScoped<AuthService>();
+
+// ---------------------------------------------------------------------------
 // Dich vu web
 // ---------------------------------------------------------------------------
 builder.Services.AddControllers();
@@ -53,6 +80,31 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "Mini app Quản lý nhiệm vụ — Oracle 21c XE, schema TASK_APP"
     });
+
+    // Nut Authorize tren Swagger: dan "Bearer <token>" vao header
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Dán access token lấy từ POST /api/auth/login (không cần gõ chữ Bearer)."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    var tepXml = Path.Combine(AppContext.BaseDirectory,
+        $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(tepXml)) c.IncludeXmlComments(tepXml);
 });
 
 var cacNguonChoPhep = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
@@ -77,6 +129,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// Thu tu BAT BUOC: xac thuc truoc phan quyen, ca hai truoc MapControllers.
+// Dat sai thu tu thi [Authorize] khong chay va endpoint ho ra ngoai.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 // ---------------------------------------------------------------------------
