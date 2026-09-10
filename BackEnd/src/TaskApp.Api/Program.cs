@@ -69,6 +69,10 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NhiemVuService>();
 builder.Services.AddScoped<XuLyNhiemVuService>();
 
+// Bo trong so mo hinh goi y — doc tu muc "GoiY", co gia tri mac dinh neu thieu.
+builder.Services.Configure<CauHinhGoiY>(builder.Configuration.GetSection(CauHinhGoiY.Muc));
+builder.Services.AddScoped<GoiYService>();
+
 // ---------------------------------------------------------------------------
 // Dich vu web
 // ---------------------------------------------------------------------------
