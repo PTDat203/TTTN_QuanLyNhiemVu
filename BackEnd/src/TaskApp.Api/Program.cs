@@ -67,6 +67,7 @@ builder.Services.AddSingleton<JwtService>();
 builder.Services.AddScoped<NguoiDungHienTai>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NhiemVuService>();
+builder.Services.AddScoped<XuLyNhiemVuService>();
 
 // ---------------------------------------------------------------------------
 // Dich vu web
