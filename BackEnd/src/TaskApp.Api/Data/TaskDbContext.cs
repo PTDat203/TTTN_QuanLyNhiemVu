@@ -27,6 +27,9 @@ public class TaskDbContext : DbContext
     }
 
     public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<Skill> Skills => Set<Skill>();
+    public DbSet<TaskRequiredSkill> TaskRequiredSkills => Set<TaskRequiredSkill>();
     public DbSet<UserQualification> UserQualifications => Set<UserQualification>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserSkill> UserSkills => Set<UserSkill>();

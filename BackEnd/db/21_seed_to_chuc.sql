@@ -28,6 +28,8 @@
 --   này bị loại oan — đó chính là lý do không được làm vậy.
 --
 -- CHẠY LẠI ĐƯỢC: xoá sạch dữ liệu nghiệp vụ rồi nạp lại với ID cố định.
+-- SAU FILE NÀY PHẢI CHẠY TIẾP 22 RỒI 24: file này xoá sạch nhiệm vụ và toàn bộ
+-- dữ liệu V2 (nhóm, ngày vào làm, mã kỹ năng chuẩn...). Thứ tự đầy đủ: 21 -> 22 -> 24.
 -- CẢNH BÁO: xoá toàn bộ dữ liệu 8 bảng. Chỉ chạy trên máy phát triển.
 --------------------------------------------------------------------------------
 
@@ -45,6 +47,17 @@ DELETE FROM USER_SKILLS;
 -- Gỡ liên kết tự tham chiếu trước khi xoá, nếu không sẽ vướng FK_USERS_MANAGER
 UPDATE USERS SET MANAGER_ID = NULL;
 DELETE FROM USERS;
+-- Từ lược đồ V2 (script 23) có bảng TEAMS trỏ vào DEPARTMENTS, phải xoá trước.
+-- Bọc động để script vẫn chạy được trên lược đồ cũ chưa có bảng này (ORA-00942).
+-- TEAMS.LEADER_USER_ID và DEPARTMENTS.HEAD_USER_ID là ON DELETE SET NULL nên xoá
+-- USERS ở trên không vướng gì.
+BEGIN
+    EXECUTE IMMEDIATE 'DELETE FROM TEAMS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
 DELETE FROM DEPARTMENTS;
 COMMIT;
 

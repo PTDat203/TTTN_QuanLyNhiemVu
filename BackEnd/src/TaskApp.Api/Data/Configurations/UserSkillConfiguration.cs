@@ -37,6 +37,13 @@ public class UserSkillConfiguration : IEntityTypeConfiguration<UserSkill>
             .HasColumnName("DESCRIPTION")
             .HasMaxLength(500);
 
+        e.Property(x => x.SkillId)
+            .HasColumnName("SKILL_ID");
+
+        e.Property(x => x.YearsExperience)
+            .HasColumnName("YEARS_EXPERIENCE")
+            .HasPrecision(3, 1);
+
         e.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT");
 
@@ -59,5 +66,15 @@ public class UserSkillConfiguration : IEntityTypeConfiguration<UserSkill>
         // nen day la duong truy cap nong nhat cua bang nay.
         e.HasIndex(x => x.UserId)
             .HasDatabaseName("IDX_USER_SKILLS_USER_ID");
+
+        // USER_SKILLS n ----- 1 SKILLS
+        e.HasOne(x => x.Skill)
+            .WithMany(s => s.NguoiCo)
+            .HasForeignKey(x => x.SkillId)
+            .HasConstraintName("FK_USER_SKILLS_SKILL")
+            .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasIndex(x => x.SkillId)
+            .HasDatabaseName("IDX_USER_SKILLS_SKILL_ID");
     }
 }

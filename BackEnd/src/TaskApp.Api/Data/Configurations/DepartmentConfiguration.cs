@@ -16,9 +16,20 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         e.Property(x => x.Code).HasColumnName("CODE").HasMaxLength(30).IsRequired();
         e.Property(x => x.Name).HasColumnName("NAME").HasMaxLength(150).IsRequired();
         e.Property(x => x.Description).HasColumnName("DESCRIPTION").HasMaxLength(500);
+        e.Property(x => x.HeadUserId).HasColumnName("HEAD_USER_ID");
         e.Property(x => x.CreatedAt).HasColumnName("CREATED_AT");
         e.Property(x => x.UpdatedAt).HasColumnName("UPDATED_AT");
 
         e.HasIndex(x => x.Code).IsUnique().HasDatabaseName("UQ_DEPARTMENTS_CODE");
+
+        // Trưởng phòng. Tạo vòng tham chiếu với USERS.DEPARTMENT_ID nên không khai
+        // navigation ngược ở User — đường User -> Department đã dành cho "thuộc phòng nào".
+        e.HasOne(x => x.Head)
+            .WithMany()
+            .HasForeignKey(x => x.HeadUserId)
+            .HasConstraintName("FK_DEPARTMENTS_HEAD")
+            .OnDelete(DeleteBehavior.SetNull);
+
+        e.HasIndex(x => x.HeadUserId).HasDatabaseName("IDX_DEPARTMENTS_HEAD_USER_ID");
     }
 }

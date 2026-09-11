@@ -67,6 +67,13 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         e.Property(x => x.DepartmentId)
             .HasColumnName("DEPARTMENT_ID");
 
+        e.Property(x => x.TeamId)
+            .HasColumnName("TEAM_ID");
+
+        e.Property(x => x.EstimatedEffort)
+            .HasColumnName("ESTIMATED_EFFORT")
+            .HasPrecision(5, 1);
+
         e.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT");
 
@@ -107,5 +114,15 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .OnDelete(DeleteBehavior.Restrict);
 
         e.HasIndex(x => x.DepartmentId).HasDatabaseName("IDX_TASKS_DEPARTMENT_ID");
+
+        // TASKS n ----- 1 TEAMS. Như USERS, database có thêm khoá ngoại ghép
+        // FK_TASKS_TEAM_DEPT để nhóm phụ trách không lệch khỏi phòng thực thi.
+        e.HasOne(x => x.Team)
+            .WithMany(t => t.NhiemVu)
+            .HasForeignKey(x => x.TeamId)
+            .HasConstraintName("FK_TASKS_TEAM")
+            .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasIndex(x => new { x.TeamId, x.DepartmentId }).HasDatabaseName("IDX_TASKS_TEAM_DEPT");
 }
 }

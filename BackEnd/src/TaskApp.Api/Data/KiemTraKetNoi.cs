@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace TaskApp.Api.Data;
 
 /// <summary>
-/// Ket qua tu kiem tra ket noi Oracle va anh xa 7 bang.
+/// Ket qua tu kiem tra ket noi Oracle va anh xa 12 bang.
 /// </summary>
 public sealed class KetQuaKiemTraKetNoi
 {
@@ -73,10 +73,15 @@ public static class KiemTraKetNoi
         }
 
         // 2. Doc thu tung bang — moi bang la mot cau SELECT do EF Core sinh tu anh xa
+        await DemAsync(kq, "DEPARTMENTS", () => db.Departments.CountAsync(ct));
+        await DemAsync(kq, "TEAMS", () => db.Teams.CountAsync(ct));
         await DemAsync(kq, "USERS", () => db.Users.CountAsync(ct));
         await DemAsync(kq, "USER_SKILLS", () => db.UserSkills.CountAsync(ct));
+        await DemAsync(kq, "USER_QUALIFICATIONS", () => db.UserQualifications.CountAsync(ct));
+        await DemAsync(kq, "SKILLS", () => db.Skills.CountAsync(ct));
         await DemAsync(kq, "TASK_STATUS_LOOKUP", () => db.TaskStatusLookups.CountAsync(ct));
         await DemAsync(kq, "TASKS", () => db.Tasks.CountAsync(ct));
+        await DemAsync(kq, "TASK_REQUIRED_SKILLS", () => db.TaskRequiredSkills.CountAsync(ct));
         await DemAsync(kq, "TASK_PROGRESS", () => db.TaskProgresses.CountAsync(ct));
         await DemAsync(kq, "TASK_REPORTS", () => db.TaskReports.CountAsync(ct));
         await DemAsync(kq, "TASK_ATTACHMENTS", () => db.TaskAttachments.CountAsync(ct));
@@ -118,10 +123,10 @@ public static class KiemTraKetNoi
     {
         var ds = new List<KetQuaBang>();
 
-        // CHAN TRUOC: neu khong ket noi duoc thi DUNG NGAY, khong thu tiep 7 bang.
+        // CHAN TRUOC: neu khong ket noi duoc thi DUNG NGAY, khong thu tiep cac bang.
         //
         // Profile DEFAULT cua Oracle khoa tai khoan sau 10 lan dang nhap sai
-        // (FAILED_LOGIN_ATTEMPTS = 10, khoa 1 ngay). Neu sai mat khau ma cu thu du 7 bang
+        // (FAILED_LOGIN_ATTEMPTS = 10, khoa 1 ngay). Neu sai mat khau ma cu thu du tung bang
         // thi chi vai lan goi endpoint nay la tai khoan bi khoa — luc do loi that
         // (ORA-01017 sai mat khau) bi che mat boi loi phu (ORA-28000 khoa tai khoan).
         if (!await db.Database.CanConnectAsync(ct))
@@ -136,10 +141,15 @@ public static class KiemTraKetNoi
             return ds;
         }
 
+        await ThuAsync(ds, "DEPARTMENTS", async () => await db.Departments.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
+        await ThuAsync(ds, "TEAMS", async () => await db.Teams.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "USERS", async () => await db.Users.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "USER_SKILLS", async () => await db.UserSkills.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
+        await ThuAsync(ds, "USER_QUALIFICATIONS", async () => await db.UserQualifications.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
+        await ThuAsync(ds, "SKILLS", async () => await db.Skills.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "TASK_STATUS_LOOKUP", async () => await db.TaskStatusLookups.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "TASKS", async () => await db.Tasks.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
+        await ThuAsync(ds, "TASK_REQUIRED_SKILLS", async () => await db.TaskRequiredSkills.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "TASK_PROGRESS", async () => await db.TaskProgresses.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "TASK_REPORTS", async () => await db.TaskReports.AsNoTracking().FirstOrDefaultAsync(ct) is not null);
         await ThuAsync(ds, "TASK_ATTACHMENTS", async () => await db.TaskAttachments.AsNoTracking().FirstOrDefaultAsync(ct) is not null);

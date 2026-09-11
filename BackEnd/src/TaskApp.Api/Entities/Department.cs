@@ -18,9 +18,15 @@ public class Department : IAuditable
     /// <summary>Mô tả chức năng nhiệm vụ của phòng. AI dùng để đoán phòng cho nhiệm vụ.</summary>
     public string? Description { get; set; }
 
+    /// <summary>Trưởng phòng. Cột HEAD_USER_ID.</summary>
+    public long? HeadUserId { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<User> ThanhVien { get; set; } = new List<User>();
     public ICollection<TaskItem> NhiemVu { get; set; } = new List<TaskItem>();
+
+    public User? Head { get; set; }
+    public ICollection<Team> Nhom { get; set; } = new List<Team>();
 }

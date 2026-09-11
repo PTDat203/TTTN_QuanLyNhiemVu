@@ -44,11 +44,19 @@ public class TaskItem : IAuditable
     /// <summary>Cot DUE_DATE - han hoan thanh, kieu Oracle DATE.</summary>
     public DateTime? DueDate { get; set; }
 
-    /// <summary>Cot CREATED_AT.</summary>
-    /// <summary>Phòng ban phụ trách nhiệm vụ. Cột DEPARTMENT_ID.
-    /// Do AI đoán từ nội dung khi tạo, người giao chỉnh lại được nếu đoán sai.</summary>
+    /// <summary>Phòng THỰC THI nhiệm vụ. Cột DEPARTMENT_ID.
+    /// Dùng để lọc ứng viên, nên phải là phòng có người làm việc đó chứ không phải
+    /// phòng ra lệnh. Do AI đoán từ nội dung khi tạo, người giao chỉnh lại được.</summary>
     public long? DepartmentId { get; set; }
 
+    /// <summary>Nhóm phụ trách trong phòng. Cột TEAM_ID. Phải thuộc đúng
+    /// <see cref="DepartmentId"/> — database chặn bằng khoá ngoại ghép.</summary>
+    public long? TeamId { get; set; }
+
+    /// <summary>Ước lượng công sức, tính bằng giờ công. Cột ESTIMATED_EFFORT, NUMBER(5,1).</summary>
+    public decimal? EstimatedEffort { get; set; }
+
+    /// <summary>Cot CREATED_AT.</summary>
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Cot UPDATED_AT.</summary>
@@ -74,6 +82,12 @@ public class TaskItem : IAuditable
     /// <summary>Cac tep dinh kem cua nhiem vu.</summary>
     public ICollection<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
 
-    /// <summary>Phòng ban phụ trách.</summary>
+    /// <summary>Phòng thực thi.</summary>
     public Department? Department { get; set; }
+
+    /// <summary>Nhóm phụ trách.</summary>
+    public Team? Team { get; set; }
+
+    /// <summary>Kỹ năng nhiệm vụ đòi hỏi, do người giao nhập hoặc AI trích.</summary>
+    public ICollection<TaskRequiredSkill> KyNangYeuCau { get; set; } = new List<TaskRequiredSkill>();
 }

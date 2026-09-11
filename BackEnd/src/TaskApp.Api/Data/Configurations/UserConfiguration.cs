@@ -56,12 +56,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         e.Property(x => x.DepartmentId)
             .HasColumnName("DEPARTMENT_ID");
 
+        e.Property(x => x.TeamId)
+            .HasColumnName("TEAM_ID");
+
         e.Property(x => x.ManagerId)
             .HasColumnName("MANAGER_ID");
 
         e.Property(x => x.JobTitle)
             .HasColumnName("JOB_TITLE")
             .HasMaxLength(100);
+
+        e.Property(x => x.HiredDate)
+            .HasColumnName("HIRED_DATE")
+            .HasColumnType("DATE");
 
         e.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT");
@@ -95,7 +102,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasConstraintName("FK_USERS_MANAGER")
             .OnDelete(DeleteBehavior.Restrict);
 
+        // USERS n ----- 1 TEAMS. Database còn một khoá ngoại ghép FK_USERS_TEAM_DEPT
+        // (DEPARTMENT_ID, TEAM_ID) bảo đảm nhóm thuộc đúng phòng; EF không cần biết khoá đó.
+        e.HasOne(x => x.Team)
+            .WithMany(t => t.ThanhVien)
+            .HasForeignKey(x => x.TeamId)
+            .HasConstraintName("FK_USERS_TEAM")
+            .OnDelete(DeleteBehavior.Restrict);
+
         e.HasIndex(x => x.DepartmentId).HasDatabaseName("IDX_USERS_DEPARTMENT_ID");
+        e.HasIndex(x => new { x.TeamId, x.DepartmentId }).HasDatabaseName("IDX_USERS_TEAM_DEPT");
         e.HasIndex(x => x.ManagerId).HasDatabaseName("IDX_USERS_MANAGER_ID");
 }
 }

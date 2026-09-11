@@ -34,6 +34,16 @@ public class TaskReport : ICoNgayTao
     /// <summary>Cot REVIEW_NOTE - kieu CLOB, ghi chu danh gia cua nguoi duyet.</summary>
     public string? ReviewNote { get; set; }
 
+    /// <summary>
+    /// Cột QUALITY_SCORE — chất lượng kết quả, thang 1..5.
+    /// Chỉ có khi đã duyệt hoặc trả về; báo cáo đang chờ duyệt thì rỗng
+    /// (ràng buộc CK_TASK_REPORTS_SCORE_REVIEWED).
+    /// </summary>
+    public int? QualityScore { get; set; }
+
+    /// <summary>Cột COMPLETION_SCORE — mức đáp ứng đủ yêu cầu, thang 1..5.</summary>
+    public int? CompletionScore { get; set; }
+
     /// <summary>Cot CREATED_AT - thoi diem gui bao cao.</summary>
     public DateTime CreatedAt { get; set; }
 

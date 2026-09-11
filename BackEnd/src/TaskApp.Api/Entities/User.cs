@@ -20,24 +20,36 @@ public class User : IAuditable
     /// <summary>Cot EMAIL - dia chi thu dien tu, cho phep rong.</summary>
     public string? Email { get; set; }
 
-    /// <summary>Cot ROLE - xem <see cref="Common.VaiTro"/>: MANAGER hoac EMPLOYEE.</summary>
+    /// <summary>
+    /// Cột USER_ROLE — QUYỀN TRONG HỆ THỐNG, xem <see cref="Common.VaiTro"/>.
+    /// Khác <see cref="JobTitle"/> là chức danh trong tổ chức, chỉ để hiển thị.
+    /// </summary>
     public string Role { get; set; } = string.Empty;
 
     /// <summary>Cot STATUS - xem <see cref="Common.TrangThaiNguoiDung"/>: ACTIVE hoac INACTIVE.</summary>
     public string Status { get; set; } = string.Empty;
 
-    /// <summary>Cot CREATED_AT.</summary>
     /// <summary>Phòng ban đang công tác. Cột DEPARTMENT_ID.
     /// Đây là ĐIỀU KIỆN LỌC chính của chức năng gợi ý người thực hiện.</summary>
     public long? DepartmentId { get; set; }
 
+    /// <summary>Nhóm trong phòng. Cột TEAM_ID. Rỗng với người ở phòng không chia nhóm
+    /// và với cấp trưởng phòng trở lên.</summary>
+    public long? TeamId { get; set; }
+
     /// <summary>Người quản lý trực tiếp. Cột MANAGER_ID, tự tham chiếu USERS.
-    /// Một cột này đủ dựng cả bốn cấp Giám đốc - Trưởng phòng - Trưởng nhóm - Nhân viên.</summary>
+    /// Sẽ bỏ ở bước thu hẹp lược đồ vì suy được từ nhóm và phòng —
+    /// code mới không nên dựa vào cột này.</summary>
     public long? ManagerId { get; set; }
 
-    /// <summary>Chức danh hiển thị, ví dụ "Trưởng nhóm Backend". Cột JOB_TITLE.</summary>
+    /// <summary>Chức danh trong tổ chức, ví dụ "Trưởng nhóm Backend". Cột JOB_TITLE.
+    /// Chỉ để hiển thị — quyền do <see cref="Role"/> quyết định.</summary>
     public string? JobTitle { get; set; }
 
+    /// <summary>Ngày vào làm. Cột HIRED_DATE, kiểu Oracle DATE.</summary>
+    public DateTime? HiredDate { get; set; }
+
+    /// <summary>Cot CREATED_AT.</summary>
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Cot UPDATED_AT.</summary>
@@ -68,6 +80,9 @@ public class User : IAuditable
 
     /// <summary>Phòng ban đang công tác.</summary>
     public Department? Department { get; set; }
+
+    /// <summary>Nhóm đang tham gia.</summary>
+    public Team? Team { get; set; }
 
     /// <summary>Người quản lý trực tiếp.</summary>
     public User? Manager { get; set; }

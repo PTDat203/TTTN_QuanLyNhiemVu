@@ -56,6 +56,8 @@
 --
 -- CHẠY LẠI ĐƯỢC: xoá sạch 4 bảng nhiệm vụ rồi nạp lại với ID cố định.
 -- KHÔNG đụng tới USERS, DEPARTMENTS, USER_SKILLS, USER_QUALIFICATIONS.
+-- SAU FILE NÀY PHẢI CHẠY LẠI 24_seed_v2.sql: xoá nhiệm vụ là mất luôn kỹ năng yêu cầu
+-- (ON DELETE CASCADE), nhóm phụ trách, giờ công ước lượng và điểm đánh giá.
 -- CẢNH BÁO: xoá toàn bộ dữ liệu nhiệm vụ. Chỉ chạy trên máy phát triển.
 --------------------------------------------------------------------------------
 

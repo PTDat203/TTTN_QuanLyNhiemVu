@@ -50,6 +50,12 @@ public class TaskReportConfiguration : IEntityTypeConfiguration<TaskReport>
             .HasColumnName("REVIEW_NOTE")
             .HasColumnType("CLOB");
 
+        e.Property(x => x.QualityScore)
+            .HasColumnName("QUALITY_SCORE");
+
+        e.Property(x => x.CompletionScore)
+            .HasColumnName("COMPLETION_SCORE");
+
         e.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT");
 
