@@ -64,6 +64,9 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .HasColumnName("DUE_DATE")
             .HasColumnType("DATE");
 
+        e.Property(x => x.DepartmentId)
+            .HasColumnName("DEPARTMENT_ID");
+
         e.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT");
 
@@ -95,5 +98,14 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         e.HasIndex(x => x.AssigneeId).HasDatabaseName("IDX_TASKS_ASSIGNEE_ID");
         e.HasIndex(x => x.CreatorId).HasDatabaseName("IDX_TASKS_CREATOR_ID");
         e.HasIndex(x => x.StatusCode).HasDatabaseName("IDX_TASKS_STATUS_CODE");
-    }
+    
+        // TASKS n ----- 1 DEPARTMENTS
+        e.HasOne(x => x.Department)
+            .WithMany(d => d.NhiemVu)
+            .HasForeignKey(x => x.DepartmentId)
+            .HasConstraintName("FK_TASKS_DEPARTMENT")
+            .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasIndex(x => x.DepartmentId).HasDatabaseName("IDX_TASKS_DEPARTMENT_ID");
+}
 }

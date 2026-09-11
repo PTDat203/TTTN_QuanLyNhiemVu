@@ -45,6 +45,10 @@ public class TaskItem : IAuditable
     public DateTime? DueDate { get; set; }
 
     /// <summary>Cot CREATED_AT.</summary>
+    /// <summary>Phòng ban phụ trách nhiệm vụ. Cột DEPARTMENT_ID.
+    /// Do AI đoán từ nội dung khi tạo, người giao chỉnh lại được nếu đoán sai.</summary>
+    public long? DepartmentId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Cot UPDATED_AT.</summary>
@@ -69,4 +73,7 @@ public class TaskItem : IAuditable
 
     /// <summary>Cac tep dinh kem cua nhiem vu.</summary>
     public ICollection<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
+
+    /// <summary>Phòng ban phụ trách.</summary>
+    public Department? Department { get; set; }
 }

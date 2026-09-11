@@ -61,7 +61,7 @@ public sealed class NhiemVuController : ControllerBase
     /// không thì <c>MOI_TAO</c>. Client không gửi trạng thái lên được.
     /// </remarks>
     [HttpPost]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -75,7 +75,7 @@ public sealed class NhiemVuController : ControllerBase
 
     /// <summary>Sửa nhiệm vụ. Chỉ người tạo, và chỉ khi còn ở "Mới tạo" hoặc "Đã giao".</summary>
     [HttpPut("{id:long}")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Sua(long id, [FromBody] SuaNhiemVuRequest yeuCau, CancellationToken ct)
@@ -86,7 +86,7 @@ public sealed class NhiemVuController : ControllerBase
 
     /// <summary>Xóa nhiệm vụ. Chỉ người tạo, chỉ khi còn "Mới tạo" và chưa có dữ liệu con.</summary>
     [HttpDelete("{id:long}")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Xoa(long id, CancellationToken ct)
@@ -98,7 +98,7 @@ public sealed class NhiemVuController : ControllerBase
     /// <summary>Giao nhiệm vụ cho một người thực hiện. Chỉ MANAGER.</summary>
     /// <remarks>Người nhận phải là EMPLOYEE đang hoạt động.</remarks>
     [HttpPost("{id:long}/giao")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Giao(long id, [FromBody] GiaoNhiemVuRequest yeuCau, CancellationToken ct)

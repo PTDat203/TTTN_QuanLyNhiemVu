@@ -27,6 +27,17 @@ public class User : IAuditable
     public string Status { get; set; } = string.Empty;
 
     /// <summary>Cot CREATED_AT.</summary>
+    /// <summary>Phòng ban đang công tác. Cột DEPARTMENT_ID.
+    /// Đây là ĐIỀU KIỆN LỌC chính của chức năng gợi ý người thực hiện.</summary>
+    public long? DepartmentId { get; set; }
+
+    /// <summary>Người quản lý trực tiếp. Cột MANAGER_ID, tự tham chiếu USERS.
+    /// Một cột này đủ dựng cả bốn cấp Giám đốc - Trưởng phòng - Trưởng nhóm - Nhân viên.</summary>
+    public long? ManagerId { get; set; }
+
+    /// <summary>Chức danh hiển thị, ví dụ "Trưởng nhóm Backend". Cột JOB_TITLE.</summary>
+    public string? JobTitle { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     /// <summary>Cot UPDATED_AT.</summary>
@@ -54,4 +65,16 @@ public class User : IAuditable
 
     /// <summary>Cac tep do nguoi nay tai len (TASK_ATTACHMENTS.UPLOADED_BY).</summary>
     public ICollection<TaskAttachment> TepDaTaiLen { get; set; } = new List<TaskAttachment>();
+
+    /// <summary>Phòng ban đang công tác.</summary>
+    public Department? Department { get; set; }
+
+    /// <summary>Người quản lý trực tiếp.</summary>
+    public User? Manager { get; set; }
+
+    /// <summary>Những người báo cáo trực tiếp cho người này.</summary>
+    public ICollection<User> CapDuoi { get; set; } = new List<User>();
+
+    /// <summary>Bằng cấp, chứng chỉ.</summary>
+    public ICollection<UserQualification> BangCap { get; set; } = new List<UserQualification>();
 }

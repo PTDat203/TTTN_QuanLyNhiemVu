@@ -338,7 +338,7 @@ public sealed class XuLyNhiemVuService
 
     // =====================================================================
     private static bool DuocXem(TaskItem nv, long userId, string vaiTro)
-        => nv.CreatorId == userId || nv.AssigneeId == userId || vaiTro == VaiTro.Manager;
+        => nv.CreatorId == userId || nv.AssigneeId == userId || VaiTro.LaCapQuanLy(vaiTro);
 
     private static BaoCaoDto ChuyenDoi(TaskReport r, string? tenNguoiBaoCao, string? tenNguoiDuyet) => new()
     {

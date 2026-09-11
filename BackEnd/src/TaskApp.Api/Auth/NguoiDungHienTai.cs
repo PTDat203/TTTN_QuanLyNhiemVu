@@ -38,10 +38,10 @@ public sealed class NguoiDungHienTai
     public string? VaiTroHienTai => Principal?.FindFirst(ClaimTypes.Role)?.Value;
 
     /// <summary>Là người giao nhiệm vụ.</summary>
-    public bool LaManager => VaiTroHienTai == VaiTro.Manager;
+    public bool LaManager => VaiTro.LaCapQuanLy(VaiTroHienTai);
 
     /// <summary>Là người thực hiện nhiệm vụ.</summary>
-    public bool LaEmployee => VaiTroHienTai == VaiTro.Employee;
+    public bool LaEmployee => VaiTro.CoTheNhanViec(VaiTroHienTai);
 
     /// <summary>
     /// Lấy id người dùng, ném lỗi nếu chưa đăng nhập.

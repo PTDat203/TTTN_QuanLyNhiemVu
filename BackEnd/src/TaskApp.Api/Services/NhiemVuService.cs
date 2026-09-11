@@ -49,11 +49,11 @@ public sealed class NhiemVuService
         var truyVan = _db.Tasks.AsNoTracking().AsQueryable();
 
         // --- Giới hạn phạm vi theo vai trò ---
-        if (vaiTro == VaiTro.Employee)
+        if (VaiTro.CoTheNhanViec(vaiTro) && !VaiTro.LaCapQuanLy(vaiTro))
         {
             truyVan = truyVan.Where(t => t.AssigneeId == userId);
         }
-        else if (vaiTro == VaiTro.Manager)
+        else if (VaiTro.LaCapQuanLy(vaiTro))
         {
             truyVan = truyVan.Where(t => t.CreatorId == userId);
         }
@@ -246,7 +246,7 @@ public sealed class NhiemVuService
         _log.LogInformation("Tạo nhiệm vụ #{Id} bởi người dùng {UserId}, trạng thái {TrangThai}",
             nv.Id, creatorId, nv.StatusCode);
 
-        return await ChiTietAsync(nv.Id, creatorId, VaiTro.Manager, ct);
+        return await ChiTietAsync(nv.Id, creatorId, VaiTro.GiamDoc, ct);
     }
 
     /// <summary>
@@ -288,7 +288,7 @@ public sealed class NhiemVuService
         nv.DueDate = yeuCau.DueDate;
 
         await _db.SaveChangesAsync(ct);
-        return await ChiTietAsync(id, userId, VaiTro.Manager, ct);
+        return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
     }
 
     /// <summary>
@@ -362,7 +362,7 @@ public sealed class NhiemVuService
         {
             nv.AssigneeId = yeuCau.AssigneeId;
             await _db.SaveChangesAsync(ct);
-            return await ChiTietAsync(id, userId, VaiTro.Manager, ct);
+            return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
         }
 
         if (!TrangThaiNhiemVu.ChuyenDuoc(nv.StatusCode, TrangThaiNhiemVu.DaGiao))
@@ -376,7 +376,7 @@ public sealed class NhiemVuService
         await _db.SaveChangesAsync(ct);
 
         _log.LogInformation("Giao nhiệm vụ #{Id} cho người dùng {AssigneeId}", id, yeuCau.AssigneeId);
-        return await ChiTietAsync(id, userId, VaiTro.Manager, ct);
+        return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
     }
 
     /// <summary>
@@ -405,7 +405,7 @@ public sealed class NhiemVuService
         await _db.SaveChangesAsync(ct);
 
         _log.LogInformation("Người dùng {UserId} tiếp nhận nhiệm vụ #{Id}", userId, id);
-        return await ChiTietAsync(id, userId, VaiTro.Employee, ct);
+        return await ChiTietAsync(id, userId, VaiTro.NhanVien, ct);
     }
 
     // =====================================================================
@@ -414,7 +414,7 @@ public sealed class NhiemVuService
 
     /// <summary>Người tạo, người được giao, hoặc MANAGER thì được xem.</summary>
     private static bool DuocXem(TaskItem nv, long userId, string vaiTro)
-        => nv.CreatorId == userId || nv.AssigneeId == userId || vaiTro == VaiTro.Manager;
+        => nv.CreatorId == userId || nv.AssigneeId == userId || VaiTro.LaCapQuanLy(vaiTro);
 
     /// <summary>Người nhận việc phải là EMPLOYEE đang hoạt động.</summary>
     private async Task<string?> KiemTraNguoiThucHienAsync(long assigneeId, CancellationToken ct)
@@ -424,7 +424,7 @@ public sealed class NhiemVuService
 
         if (nguoi is null) return $"Không tìm thấy người dùng #{assigneeId}.";
 
-        if (nguoi.Role != VaiTro.Employee)
+        if (!VaiTro.CoTheNhanViec(nguoi.Role))
             return $"\"{nguoi.FullName}\" không phải người thực hiện nên không nhận được nhiệm vụ.";
 
         if (nguoi.Status != TrangThaiNguoiDung.HoatDong)

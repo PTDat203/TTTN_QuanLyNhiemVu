@@ -18,7 +18,7 @@ namespace TaskApp.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/goi-y")]
-[Authorize(Roles = VaiTro.Manager)]
+[Authorize(Roles = VaiTro.NhomGiaoViec)]
 [Produces("application/json")]
 public sealed class GoiYController : ControllerBase
 {

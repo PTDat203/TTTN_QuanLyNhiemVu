@@ -100,7 +100,8 @@ public sealed class GoiYService
 
         // --- 2. Lọc cứng: chỉ nhân viên đang hoạt động, trừ người đã được giao ---
         var ungVien = await _db.Users.AsNoTracking()
-            .Where(u => u.Role == VaiTro.Employee && u.Status == TrangThaiNguoiDung.HoatDong)
+            .Where(u => (u.Role == VaiTro.TruongNhom || u.Role == VaiTro.NhanVien)
+                        && u.Status == TrangThaiNguoiDung.HoatDong)
             .Where(u => assigneeHienTai == null || u.Id != assigneeHienTai)
             .Select(u => new { u.Id, u.FullName })
             .ToListAsync(ct);

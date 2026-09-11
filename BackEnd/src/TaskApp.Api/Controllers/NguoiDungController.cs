@@ -27,12 +27,13 @@ public sealed class NguoiDungController : ControllerBase
     /// bày ra lựa chọn mà backend sẽ từ chối.
     /// </remarks>
     [HttpGet("nhan-vien")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(IReadOnlyList<NguoiDungDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DanhSachNhanVien(CancellationToken ct)
     {
         var ds = await _db.Users.AsNoTracking()
-            .Where(u => u.Role == VaiTro.Employee && u.Status == TrangThaiNguoiDung.HoatDong)
+            .Where(u => (u.Role == VaiTro.TruongNhom || u.Role == VaiTro.NhanVien)
+                        && u.Status == TrangThaiNguoiDung.HoatDong)
             .OrderBy(u => u.FullName)
             .Select(u => new NguoiDungDto
             {

@@ -82,7 +82,7 @@ public sealed class XuLyNhiemVuController : ControllerBase
     /// Xác nhận thì nhiệm vụ "Hoàn thành"; từ chối thì chuyển "Yêu cầu bổ sung" và bắt buộc nêu lý do.
     /// </summary>
     [HttpPost("api/bao-cao/{baoCaoId:long}/duyet")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(BaoCaoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -95,7 +95,7 @@ public sealed class XuLyNhiemVuController : ControllerBase
 
     /// <summary>Các báo cáo đang chờ chính tôi duyệt — hộp việc cần xử lý của người giao.</summary>
     [HttpGet("api/bao-cao/cho-toi-duyet")]
-    [Authorize(Roles = VaiTro.Manager)]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(IReadOnlyList<BaoCaoDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ChoToiDuyet(CancellationToken ct)
     {
