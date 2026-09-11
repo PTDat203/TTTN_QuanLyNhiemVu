@@ -17,10 +17,14 @@ import {
       <div>
         <h1>Nhiệm vụ</h1>
         <p class="phu">
-          {{ auth.laManager() ? 'Nhiệm vụ bạn đã tạo' : 'Nhiệm vụ được giao cho bạn' }}
+          {{
+            auth.coTheGiaoViec()
+              ? 'Việc bạn giao, việc giao cho bạn và việc trong phạm vi bạn phụ trách'
+              : 'Nhiệm vụ được giao cho bạn'
+          }}
         </p>
       </div>
-      @if (auth.laManager()) {
+      @if (auth.coTheGiaoViec()) {
         <a routerLink="/nhiem-vu/tao" class="nut-chinh">+ Tạo nhiệm vụ</a>
       }
     </div>
@@ -66,7 +70,10 @@ import {
             <th>Tiêu đề</th>
             <th>Trạng thái</th>
             <th>Ưu tiên</th>
-            <th>{{ auth.laManager() ? 'Người thực hiện' : 'Người giao' }}</th>
+            <th>{{ auth.coTheGiaoViec() ? 'Người thực hiện' : 'Người giao' }}</th>
+            @if (auth.coTheGiaoViec()) {
+              <th>Phòng · Nhóm</th>
+            }
             <th>Hạn</th>
             <th>Tiến độ</th>
           </tr>
@@ -84,7 +91,10 @@ import {
                 <span class="cham" [style.background]="mauUuTien(nv)"></span>
                 {{ nv.tenUuTien }}
               </td>
-              <td>{{ auth.laManager() ? (nv.tenNguoiThucHien ?? '— chưa giao') : nv.tenNguoiTao }}</td>
+              <td>{{ auth.coTheGiaoViec() ? (nv.tenNguoiThucHien ?? '— chưa giao') : nv.tenNguoiTao }}</td>
+              @if (auth.coTheGiaoViec()) {
+                <td class="phong">{{ nv.tenNhom ?? nv.tenPhongBan ?? '—' }}</td>
+              }
               <td>
                 @if (nv.dueDate) {
                   <span [class.qua-han]="nv.quaHan">
@@ -235,6 +245,10 @@ import {
       .qua-han {
         color: #dc2626;
         font-weight: 500;
+      }
+      .phong {
+        color: #475569;
+        font-size: 13px;
       }
       .mo {
         color: #94a3b8;

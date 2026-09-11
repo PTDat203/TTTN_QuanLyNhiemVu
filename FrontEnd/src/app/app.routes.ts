@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { guardDangNhap, guardManager } from './core/guards';
+import { guardDangNhap, guardGiaoViec } from './core/guards';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'nhiem-vu' },
@@ -14,7 +14,7 @@ export const routes: Routes = [
   },
   {
     path: 'nhiem-vu/tao',
-    canActivate: [guardDangNhap, guardManager],
+    canActivate: [guardDangNhap, guardGiaoViec],
     loadComponent: () => import('./man/tao-nhiem-vu').then((m) => m.TaoNhiemVuComponent),
   },
   {

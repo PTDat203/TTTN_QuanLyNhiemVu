@@ -27,7 +27,11 @@ export interface LoiApi {
 
 // ---------------------------------------------------------------- xác thực
 
-export type VaiTro = 'MANAGER' | 'EMPLOYEE';
+/** Quyền trong hệ thống, khớp cột USERS.USER_ROLE. Khác chức danh (jobTitle) chỉ để hiển thị. */
+export type VaiTro = 'DIRECTOR' | 'DEPT_HEAD' | 'TEAM_LEAD' | 'EMPLOYEE';
+
+/** Các vai trò được giao việc cho người khác — khớp VaiTro.NhomGiaoViec phía backend. */
+export const VAI_TRO_GIAO_VIEC: readonly VaiTro[] = ['DIRECTOR', 'DEPT_HEAD', 'TEAM_LEAD'];
 
 export interface NguoiDung {
   id: number;
@@ -37,6 +41,11 @@ export interface NguoiDung {
   role: VaiTro;
   tenVaiTro: string;
   status: string;
+  jobTitle?: string | null;
+  departmentId?: number | null;
+  tenPhongBan?: string | null;
+  teamId?: number | null;
+  tenNhom?: string | null;
 }
 
 export interface DangNhapRequest {
@@ -75,6 +84,11 @@ export interface NhiemVuTomTat {
   tenNguoiTao?: string | null;
   assigneeId?: number | null;
   tenNguoiThucHien?: string | null;
+  /** Phòng thực thi — AI đoán khi tạo, hoặc lấy theo người nhận khi giao. */
+  departmentId?: number | null;
+  tenPhongBan?: string | null;
+  teamId?: number | null;
+  tenNhom?: string | null;
   startDate?: string | null;
   dueDate?: string | null;
   soNgayConLai?: number | null;
@@ -105,6 +119,10 @@ export interface BaoCao {
   reviewerId?: number | null;
   tenNguoiDuyet?: string | null;
   reviewNote?: string | null;
+  /** Chất lượng kết quả, thang 1..5. Rỗng khi chưa duyệt. */
+  qualityScore?: number | null;
+  /** Mức đáp ứng đủ yêu cầu, thang 1..5. Rỗng khi chưa duyệt. */
+  completionScore?: number | null;
   createdAt?: string | null;
   reviewedAt?: string | null;
 }
@@ -154,16 +172,28 @@ export interface TaoNhiemVuRequest {
 // ---------------------------------------------------------------- AI gợi ý
 
 export interface ThanhPhanDiem {
+  /** Điểm của thành phần, 0..1. */
   diem: number;
   trongSo: number;
+  /** Phần đóng góp vào điểm tổng = diem × trongSo. */
   dongGop: number;
 }
 
+/** Sáu thành phần cấu thành điểm phù hợp. */
 export interface ChiTietDiem {
-  kyNang: ThanhPhanDiem;
-  kinhNghiem: ThanhPhanDiem;
+  nguNghia: ThanhPhanDiem;
+  mucKyNang: ThanhPhanDiem;
+  hieuSuat: ThanhPhanDiem;
+  viecTuongTu: ThanhPhanDiem;
   dungHan: ThanhPhanDiem;
   khoiLuong: ThanhPhanDiem;
+}
+
+export interface ViecTuongTu {
+  taskId: number;
+  tieuDe: string;
+  doGan: number;
+  chatLuong?: number | null;
 }
 
 export interface SoLieuUngVien {
@@ -171,12 +201,20 @@ export interface SoLieuUngVien {
   soNhiemVuDungHan: number;
   soNhiemVuDangLam: number;
   taiHienTai: number;
+  chatLuongTrungBinh?: number | null;
+  /** Chưa hoàn thành việc nào — hiệu suất và đúng hạn đang là giá trị mặc định. */
+  chuaCoLichSu: boolean;
   kyNangKhop: string[];
+  kyNangThieu: string[];
+  viecTuongTu: ViecTuongTu[];
 }
 
 export interface UngVien {
   userId: number;
   fullName: string;
+  chucDanh?: string | null;
+  tenPhongBan?: string | null;
+  tenNhom?: string | null;
   diem: number;
   thuHang: number;
   chiTietDiem: ChiTietDiem;
@@ -184,14 +222,61 @@ export interface UngVien {
   lyDo: string[];
 }
 
+export interface DiemDonVi {
+  id: number;
+  ten: string;
+  diem: number;
+  diemHoSo: number;
+  diemLichSu?: number | null;
+}
+
+export type KetLuanPhongBan = 'CHAC_CHAN' | 'LUONG_LU' | 'KHONG_RO';
+
+/** AI đoán nhiệm vụ thuộc phòng nào — tầng lọc thứ nhất. */
+export interface SuyLuanPhongBan {
+  ketLuan: KetLuanPhongBan;
+  moTa: string;
+  cacPhong: DiemDonVi[];
+  phongDaChon: number[];
+  nhom?: DiemDonVi | null;
+}
+
+export interface KyNangYeuCau {
+  skillId: number;
+  code: string;
+  ten: string;
+  mucYeuCau?: number | null;
+  /** MANUAL = người giao nhập; AI = trích tự động từ nội dung. */
+  nguon: 'AI' | 'MANUAL';
+  doKhop?: number | null;
+}
+
 export interface GoiYResponse {
   phienBanTrongSo: string;
+  /** Nhúng ngữ nghĩa, hoặc TF-IDF khi dịch vụ AI không phản hồi. */
+  phuongPhap: string;
   noiDungDaDung: string;
+  soUngVienTrongPhamVi: number;
   soUngVienDaXet: number;
+  suyLuanPhongBan: SuyLuanPhongBan;
+  kyNangYeuCau: KyNangYeuCau[];
   canhBao: string[];
   ungVien: UngVien[];
   thoiGianMs: number;
 }
+
+/**
+ * Sáu thành phần điểm theo thứ tự trọng số giảm dần, kèm tên và màu. Dùng chung cho thanh
+ * phân rã điểm và chú giải, để hai chỗ không bao giờ lệch màu nhau.
+ */
+export const THANH_PHAN_DIEM: readonly { khoa: keyof ChiTietDiem; ten: string; mau: string }[] = [
+  { khoa: 'nguNghia', ten: 'Ngữ nghĩa', mau: '#2563eb' },
+  { khoa: 'mucKyNang', ten: 'Mức kỹ năng', mau: '#7c3aed' },
+  { khoa: 'hieuSuat', ten: 'Hiệu suất', mau: '#0891b2' },
+  { khoa: 'viecTuongTu', ten: 'Việc tương tự', mau: '#db2777' },
+  { khoa: 'dungHan', ten: 'Đúng hạn', mau: '#16a34a' },
+  { khoa: 'khoiLuong', ten: 'Khối lượng', mau: '#d97706' },
+];
 
 // ---------------------------------------------------------------- nhãn hiển thị
 

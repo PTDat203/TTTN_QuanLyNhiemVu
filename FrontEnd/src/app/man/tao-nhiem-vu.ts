@@ -3,7 +3,9 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { GoiYService, NhiemVuService } from '../core/api.service';
-import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
+import {
+  ChiTietDiem, GoiYResponse, KetLuanPhongBan, MucUuTien, NguoiDung, THANH_PHAN_DIEM, UngVien,
+} from '../core/models';
 
 @Component({
   selector: 'app-tao-nhiem-vu',
@@ -30,7 +32,7 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
         <label>
           Mô tả
           <textarea name="description" [(ngModel)]="description" rows="5"></textarea>
-          <small>Mô tả càng rõ thì AI gợi ý càng chính xác.</small>
+          <small>Mô tả càng rõ thì AI đoán phòng và gợi ý người càng chính xác.</small>
         </label>
 
         <div class="hang">
@@ -57,11 +59,12 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
         <label>
           Người thực hiện
           <select name="assigneeId" [(ngModel)]="assigneeId">
-            <option [ngValue]="null">— Chưa giao, để giao sau —</option>
+            <option [ngValue]="null">— Chưa giao, để AI đoán phòng rồi giao sau —</option>
             @for (nv of nhanVien(); track nv.id) {
-              <option [ngValue]="nv.id">{{ nv.fullName }}</option>
+              <option [ngValue]="nv.id">{{ moTaNguoi(nv) }}</option>
             }
           </select>
+          <small>Chỉ hiện những người trong phạm vi bạn được giao việc.</small>
         </label>
 
         <button type="submit" class="nut-chinh" [disabled]="dangLuu()">
@@ -78,37 +81,67 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
           </button>
         </div>
 
-        @if (!ketQuaGoiY()) {
-          <p class="mo">
-            Nhập tiêu đề và mô tả nhiệm vụ rồi bấm <strong>Gợi ý</strong>.
-            Hệ thống chấm điểm dựa trên kỹ năng đã khai, kinh nghiệm, tỷ lệ đúng hạn
-            và khối lượng việc đang gánh.
-          </p>
-        } @else {
+        @if (ketQuaGoiY(); as kq) {
           <div class="tom-tat">
-            Đã xét {{ ketQuaGoiY()!.soUngVienDaXet }} nhân viên trong
-            {{ ketQuaGoiY()!.thoiGianMs }}ms · bộ trọng số {{ ketQuaGoiY()!.phienBanTrongSo }}
+            {{ kq.phuongPhap }} · xét {{ kq.soUngVienDaXet }}/{{ kq.soUngVienTrongPhamVi }} người
+            · {{ kq.thoiGianMs }}ms · tham số {{ kq.phienBanTrongSo }}
           </div>
 
-          @for (c of ketQuaGoiY()!.canhBao; track c) {
+          <!-- Tầng 1: AI đoán nhiệm vụ thuộc phòng nào -->
+          <div class="suy-luan" [attr.data-ket-luan]="kq.suyLuanPhongBan.ketLuan">
+            <div class="dong-dau">
+              <span class="nhan-ket-luan">{{ nhanKetLuan(kq.suyLuanPhongBan.ketLuan) }}</span>
+              {{ kq.suyLuanPhongBan.moTa }}
+            </div>
+            @for (p of kq.suyLuanPhongBan.cacPhong; track p.id) {
+              <div class="dong-phong" [class.duoc-chon]="kq.suyLuanPhongBan.phongDaChon.includes(p.id)">
+                <span class="ten-phong">{{ p.ten }}</span>
+                <span class="thanh"><i [style.width.%]="p.diem * 100"></i></span>
+                <span class="so">{{ p.diem.toFixed(2) }}</span>
+              </div>
+            }
+            @if (kq.suyLuanPhongBan.nhom; as nhom) {
+              <div class="ghi-chu">Nhóm phù hợp nhất: <strong>{{ nhom.ten }}</strong></div>
+            }
+          </div>
+
+          @if (kq.kyNangYeuCau.length) {
+            <div class="ky-nang">
+              <span class="ghi-chu">Kỹ năng cần:</span>
+              @for (k of kq.kyNangYeuCau; track k.skillId) {
+                <span class="chip" [class.chip-ai]="k.nguon === 'AI'"
+                      [title]="k.nguon === 'AI' ? 'AI trích từ nội dung, độ khớp ' + (k.doKhop ?? 0).toFixed(2) : 'Người giao nhập'">
+                  {{ k.ten }}{{ k.mucYeuCau ? ' ≥ ' + k.mucYeuCau : '' }}
+                </span>
+              }
+            </div>
+          }
+
+          @for (c of kq.canhBao; track c) {
             <div class="canh-bao">{{ c }}</div>
           }
 
-          @for (uv of ketQuaGoiY()!.ungVien; track uv.userId) {
+          <!-- Tầng 2: xếp hạng trong tập đã lọc -->
+          @for (uv of kq.ungVien; track uv.userId) {
             <div class="ung-vien" [class.duoc-chon]="assigneeId === uv.userId">
               <div class="hang-ten">
                 <span class="hang-so">{{ uv.thuHang }}</span>
-                <strong>{{ uv.fullName }}</strong>
+                <span class="ten-khoi">
+                  <strong>{{ uv.fullName }}</strong>
+                  <small>{{ uv.chucDanh }}{{ uv.tenNhom ? ' · ' + uv.tenNhom : '' }}</small>
+                </span>
+                @if (uv.soLieu.chuaCoLichSu) {
+                  <span class="nhan-moi" title="Chưa có lịch sử — hiệu suất và đúng hạn dùng giá trị mặc định">Mới</span>
+                }
                 <span class="diem">{{ (uv.diem * 100).toFixed(1) }}</span>
               </div>
 
-              <!-- Thanh phân rã điểm: mỗi đoạn là một đặc trưng, bề rộng đúng bằng
-                   phần đóng góp của nó. Nhìn là thấy điểm tổng do đâu mà có. -->
+              <!-- Thanh phân rã điểm: mỗi đoạn là một thành phần, bề rộng đúng bằng phần đóng
+                   góp của nó. Nhìn là thấy điểm tổng do đâu mà có. -->
               <div class="thanh-diem" [title]="moTaDiem(uv)">
-                <i class="d1" [style.width.%]="uv.chiTietDiem.kyNang.dongGop * 100"></i>
-                <i class="d2" [style.width.%]="uv.chiTietDiem.kinhNghiem.dongGop * 100"></i>
-                <i class="d3" [style.width.%]="uv.chiTietDiem.dungHan.dongGop * 100"></i>
-                <i class="d4" [style.width.%]="uv.chiTietDiem.khoiLuong.dongGop * 100"></i>
+                @for (tp of thanhPhan; track tp.khoa) {
+                  <i [style.width.%]="uv.chiTietDiem[tp.khoa].dongGop * 100" [style.background]="tp.mau"></i>
+                }
               </div>
 
               <ul class="ly-do">
@@ -124,13 +157,16 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
           }
 
           <div class="chu-thich">
-            <span><i class="d1"></i>Kỹ năng</span>
-            <span><i class="d2"></i>Kinh nghiệm</span>
-            <span><i class="d3"></i>Đúng hạn</span>
-            <span><i class="d4"></i>Khối lượng</span>
+            @for (tp of thanhPhan; track tp.khoa) {
+              <span><i [style.background]="tp.mau"></i>{{ tp.ten }} {{ trongSo(kq, tp.khoa) }}</span>
+            }
           </div>
-          <p class="mo nho">
-            AI chỉ đề xuất. Quyết định giao việc vẫn thuộc về bạn.
+          <p class="mo nho">AI chỉ đề xuất. Quyết định giao việc vẫn thuộc về bạn.</p>
+        } @else {
+          <p class="mo">
+            Nhập tiêu đề và mô tả nhiệm vụ rồi bấm <strong>Gợi ý</strong>. AI đoán nhiệm vụ thuộc
+            phòng nào, cần kỹ năng gì, rồi xếp hạng những người bạn giao được theo sáu tiêu chí:
+            ngữ nghĩa, mức kỹ năng, hiệu suất, việc tương tự, đúng hạn và khối lượng việc đang gánh.
           </p>
         }
       </aside>
@@ -150,7 +186,7 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
       }
       .hai-cot {
         display: grid;
-        grid-template-columns: 1fr 380px;
+        grid-template-columns: 1fr 400px;
         gap: 18px;
         align-items: start;
       }
@@ -248,6 +284,77 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
         border-bottom: 1px solid #e2e8f0;
         padding-bottom: 8px;
       }
+      .suy-luan {
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #16a34a;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        color: #334155;
+      }
+      .suy-luan[data-ket-luan='LUONG_LU'] {
+        border-left-color: #d97706;
+      }
+      .suy-luan[data-ket-luan='KHONG_RO'] {
+        border-left-color: #94a3b8;
+      }
+      .nhan-ket-luan {
+        font-weight: 600;
+        margin-right: 4px;
+      }
+      .dong-phong {
+        display: grid;
+        grid-template-columns: 1fr 90px 34px;
+        gap: 8px;
+        align-items: center;
+        font-size: 12.5px;
+        color: #94a3b8;
+      }
+      .dong-phong.duoc-chon {
+        color: #0f172a;
+        font-weight: 500;
+      }
+      .dong-phong .thanh {
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .dong-phong .thanh i {
+        display: block;
+        height: 100%;
+        background: #94a3b8;
+      }
+      .dong-phong.duoc-chon .thanh i {
+        background: #16a34a;
+      }
+      .so {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .ghi-chu {
+        font-size: 12px;
+        color: #64748b;
+      }
+      .ky-nang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .chip {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2px 9px;
+        font-size: 12px;
+        color: #334155;
+      }
+      .chip-ai {
+        border-style: dashed;
+      }
       .canh-bao {
         background: #fffbeb;
         color: #92400e;
@@ -280,6 +387,21 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
         display: grid;
         place-items: center;
         font-size: 11px;
+        flex-shrink: 0;
+      }
+      .ten-khoi {
+        display: grid;
+        line-height: 1.3;
+      }
+      .ten-khoi small {
+        font-size: 11.5px;
+      }
+      .nhan-moi {
+        background: #ede9fe;
+        color: #5b21b6;
+        font-size: 11px;
+        padding: 1px 7px;
+        border-radius: 10px;
       }
       .diem {
         margin-left: auto;
@@ -297,18 +419,6 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
       .thanh-diem i {
         display: block;
         height: 100%;
-      }
-      .d1 {
-        background: #2563eb;
-      }
-      .d2 {
-        background: #0891b2;
-      }
-      .d3 {
-        background: #16a34a;
-      }
-      .d4 {
-        background: #d97706;
       }
       .ly-do {
         margin: 0;
@@ -328,7 +438,7 @@ import { GoiYResponse, MucUuTien, NguoiDung, UngVien } from '../core/models';
       }
       .chu-thich {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
         font-size: 11.5px;
         color: #64748b;
@@ -360,6 +470,8 @@ export class TaoNhiemVuComponent {
   private goiYApi = inject(GoiYService);
   private http = inject(HttpClient);
   private router = inject(Router);
+
+  readonly thanhPhan = THANH_PHAN_DIEM;
 
   title = '';
   description = '';
@@ -404,15 +516,26 @@ export class TaoNhiemVuComponent {
     this.assigneeId = uv.userId;
   }
 
+  moTaNguoi(n: NguoiDung): string {
+    const viTri = [n.jobTitle, n.tenNhom ?? n.tenPhongBan].filter((x) => !!x).join(' · ');
+    return viTri ? `${n.fullName} — ${viTri}` : n.fullName;
+  }
+
+  nhanKetLuan(k: KetLuanPhongBan): string {
+    return k === 'CHAC_CHAN' ? 'Chắc chắn.' : k === 'LUONG_LU' ? 'Lưỡng lự.' : 'Không rõ.';
+  }
+
+  trongSo(kq: GoiYResponse, khoa: keyof ChiTietDiem): string {
+    const w = kq.ungVien[0]?.chiTietDiem[khoa].trongSo;
+    return w === undefined ? '' : `${Math.round(w * 100)}%`;
+  }
+
   moTaDiem(uv: UngVien): string {
     const c = uv.chiTietDiem;
-    return (
-      `Kỹ năng ${c.kyNang.diem.toFixed(2)}×${c.kyNang.trongSo} = ${c.kyNang.dongGop.toFixed(3)}\n` +
-      `Kinh nghiệm ${c.kinhNghiem.diem.toFixed(2)}×${c.kinhNghiem.trongSo} = ${c.kinhNghiem.dongGop.toFixed(3)}\n` +
-      `Đúng hạn ${c.dungHan.diem.toFixed(2)}×${c.dungHan.trongSo} = ${c.dungHan.dongGop.toFixed(3)}\n` +
-      `Khối lượng ${c.khoiLuong.diem.toFixed(2)}×${c.khoiLuong.trongSo} = ${c.khoiLuong.dongGop.toFixed(3)}\n` +
-      `Tổng = ${uv.diem.toFixed(4)}`
+    const dong = this.thanhPhan.map(
+      (tp) => `${tp.ten} ${c[tp.khoa].diem.toFixed(2)} × ${c[tp.khoa].trongSo} = ${c[tp.khoa].dongGop.toFixed(3)}`,
     );
+    return [...dong, `Tổng = ${uv.diem.toFixed(4)}`].join('\n');
   }
 
   luu(): void {

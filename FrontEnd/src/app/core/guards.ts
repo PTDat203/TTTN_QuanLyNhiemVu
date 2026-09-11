@@ -14,16 +14,17 @@ export const guardDangNhap: CanActivateFn = () => {
 };
 
 /**
- * Chặn route chỉ dành cho người giao nhiệm vụ.
+ * Chặn route chỉ dành cho người được giao việc cho người khác (Giám đốc, trưởng phòng,
+ * trưởng nhóm).
  *
  * Đây chỉ là lớp che giao diện cho đỡ rối. Quyền thật vẫn do backend quyết định —
- * mọi endpoint đều tự kiểm vai trò, nên chặn ở frontend không phải là biện pháp bảo mật.
+ * mọi endpoint đều tự kiểm vai trò và phạm vi, nên chặn ở frontend không phải biện pháp bảo mật.
  */
-export const guardManager: CanActivateFn = () => {
+export const guardGiaoViec: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.laManager()) return true;
+  if (auth.coTheGiaoViec()) return true;
 
   router.navigate(['/nhiem-vu']);
   return false;

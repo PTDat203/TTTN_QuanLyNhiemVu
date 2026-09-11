@@ -42,6 +42,10 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
               <dt>Người giao</dt><dd>{{ nv()!.tenNguoiTao }}</dd>
               <dt>Người thực hiện</dt>
               <dd>{{ nv()!.tenNguoiThucHien ?? '— chưa giao' }}</dd>
+              <dt>Phòng thực thi</dt>
+              <dd>
+                {{ nv()!.tenPhongBan ?? '— chưa xác định' }}{{ nv()!.tenNhom ? ' · ' + nv()!.tenNhom : '' }}
+              </dd>
               <dt>Mức ưu tiên</dt><dd>{{ nv()!.tenUuTien }}</dd>
               <dt>Hạn hoàn thành</dt>
               <dd [class.qua-han]="nv()!.quaHan">
@@ -59,7 +63,9 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
                 <select [(ngModel)]="nguoiNhanId">
                   <option [ngValue]="null">— Chọn người thực hiện —</option>
                   @for (n of nhanVien(); track n.id) {
-                    <option [ngValue]="n.id">{{ n.fullName }}</option>
+                    <option [ngValue]="n.id">
+                      {{ n.fullName }}{{ n.jobTitle ? ' — ' + n.jobTitle : '' }}
+                    </option>
                   }
                 </select>
                 <button (click)="giao()" [disabled]="!nguoiNhanId">Giao nhiệm vụ</button>
@@ -104,6 +110,29 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
                   rows="2"
                   placeholder="Ý kiến (bắt buộc khi từ chối)…"
                 ></textarea>
+                <div class="hang cham-diem">
+                  <label>
+                    Chất lượng
+                    <select [(ngModel)]="diemChatLuong">
+                      <option [ngValue]="null">— chấm —</option>
+                      @for (d of thangDiem; track d) {
+                        <option [ngValue]="d">{{ d }} / 5</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    Mức hoàn thành
+                    <select [(ngModel)]="diemHoanThanh">
+                      <option [ngValue]="null">— chấm —</option>
+                      @for (d of thangDiem; track d) {
+                        <option [ngValue]="d">{{ d }} / 5</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <small class="mo">
+                  Điểm chất lượng là dữ liệu AI dùng để đánh giá hiệu suất người thực hiện.
+                </small>
                 <div class="hang">
                   <button class="nut-dat" (click)="duyet(true)">✓ Xác nhận hoàn thành</button>
                   <button class="nut-tu-choi" (click)="duyet(false)">✕ Yêu cầu bổ sung</button>
@@ -160,6 +189,11 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
                     <span class="mo nho">{{ bc.createdAt | date: 'dd/MM HH:mm' }}</span>
                   </div>
                   <p>{{ bc.content }}</p>
+                  @if (bc.qualityScore || bc.completionScore) {
+                    <p class="diem-bc">
+                      Chất lượng {{ bc.qualityScore ?? '—' }}/5 · Mức hoàn thành {{ bc.completionScore ?? '—' }}/5
+                    </p>
+                  }
                   @if (bc.reviewNote) {
                     <p class="y-kien">
                       <strong>{{ bc.tenNguoiDuyet }}:</strong> {{ bc.reviewNote }}
@@ -327,6 +361,14 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         color: #334155;
         line-height: 1.55;
       }
+      .cham-diem label {
+        flex: 1;
+      }
+      .diem-bc {
+        font-size: 12.5px !important;
+        color: #0f172a !important;
+        font-weight: 500;
+      }
       .y-kien {
         background: #f8fafc;
         padding: 8px 10px;
@@ -400,12 +442,15 @@ export class ChiTietComponent implements OnInit {
   noiDungTienDo = '';
   noiDungBaoCao = '';
   yKien = '';
+  diemChatLuong: number | null = null;
+  diemHoanThanh: number | null = null;
+  readonly thangDiem = [1, 2, 3, 4, 5];
 
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
     this.tai();
 
-    if (this.auth.laManager()) {
+    if (this.auth.coTheGiaoViec()) {
       this.http
         .get<NguoiDung[]>('/api/nguoi-dung/nhan-vien')
         .subscribe({ next: (ds) => this.nhanVien.set(ds), error: () => undefined });
@@ -435,7 +480,7 @@ export class ChiTietComponent implements OnInit {
     const nv = this.nv();
     return (
       !!nv &&
-      this.auth.laManager() &&
+      this.auth.coTheGiaoViec() &&
       nv.creatorId === this.auth.nguoiDung()?.id &&
       (nv.statusCode === 'MOI_TAO' || nv.statusCode === 'DA_GIAO')
     );
@@ -464,7 +509,7 @@ export class ChiTietComponent implements OnInit {
     const nv = this.nv();
     return (
       !!nv &&
-      this.auth.laManager() &&
+      this.auth.coTheGiaoViec() &&
       nv.creatorId === this.auth.nguoiDung()?.id &&
       nv.statusCode === 'CHO_XAC_NHAN'
     );
@@ -524,10 +569,18 @@ export class ChiTietComponent implements OnInit {
       this.loi.set('Phải nêu lý do khi từ chối báo cáo.');
       return;
     }
+    // Backend cho phép bỏ trống, nhưng xác nhận hoàn thành mà không chấm thì AI mất dữ liệu
+    // hiệu suất của nhiệm vụ này — nên giao diện yêu cầu chấm ít nhất chất lượng.
+    if (xacNhan && this.diemChatLuong === null) {
+      this.loi.set('Chấm điểm chất lượng trước khi xác nhận hoàn thành.');
+      return;
+    }
     this.api
-      .duyetBaoCao(bc.id, xacNhan, this.yKien)
+      .duyetBaoCao(bc.id, xacNhan, this.yKien, this.diemChatLuong, this.diemHoanThanh)
       .subscribe(this.xong(xacNhan ? 'Đã xác nhận hoàn thành.' : 'Đã yêu cầu bổ sung.'));
     this.yKien = '';
+    this.diemChatLuong = null;
+    this.diemHoanThanh = null;
   }
 
   quayLai(): void {

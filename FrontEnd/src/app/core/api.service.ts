@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import {
   BaoCao, DangNhapRequest, DangNhapResponse, GoiYResponse, KetQuaPhanTrang,
   NguoiDung, NhiemVuChiTiet, NhiemVuLoc, NhiemVuTomTat, TaoNhiemVuRequest, TienDo,
+  VAI_TRO_GIAO_VIEC,
 } from './models';
 
 /** Địa chỉ BackEnd. Khi chạy `ng serve`, proxy.conf.json chuyển tiếp /api sang cổng 5080. */
@@ -30,8 +31,17 @@ export class AuthService {
   readonly nguoiDung = signal<NguoiDung | null>(this.docNguoiDungDaLuu());
 
   readonly daDangNhap = computed(() => this.nguoiDung() !== null);
-  readonly laManager = computed(() => this.nguoiDung()?.role === 'MANAGER');
-  readonly laEmployee = computed(() => this.nguoiDung()?.role === 'EMPLOYEE');
+
+  /**
+   * Được giao việc cho người khác: Giám đốc, trưởng phòng, trưởng nhóm.
+   *
+   * Chỉ để che bớt giao diện. Quyền thật — kể cả phạm vi phòng nào, nhóm nào — do backend
+   * quyết định; frontend không biết và không cần biết quy tắc phạm vi.
+   */
+  readonly coTheGiaoViec = computed(() => {
+    const vaiTro = this.nguoiDung()?.role;
+    return !!vaiTro && VAI_TRO_GIAO_VIEC.includes(vaiTro);
+  });
 
   get token(): string | null {
     return localStorage.getItem(KHOA_TOKEN);
@@ -127,8 +137,23 @@ export class NhiemVuService {
     return this.http.post<BaoCao>(`${API}/nhiem-vu/${id}/bao-cao`, { content });
   }
 
-  duyetBaoCao(baoCaoId: number, xacNhan: boolean, reviewNote?: string): Observable<BaoCao> {
-    return this.http.post<BaoCao>(`${API}/bao-cao/${baoCaoId}/duyet`, { xacNhan, reviewNote });
+  /**
+   * Duyệt báo cáo. Điểm chất lượng và mức hoàn thành (1..5) là dữ liệu mà AI dùng để chấm
+   * hiệu suất lịch sử — bỏ trống thì nhiệm vụ này không góp vào điểm đó.
+   */
+  duyetBaoCao(
+    baoCaoId: number,
+    xacNhan: boolean,
+    reviewNote?: string,
+    qualityScore?: number | null,
+    completionScore?: number | null,
+  ): Observable<BaoCao> {
+    return this.http.post<BaoCao>(`${API}/bao-cao/${baoCaoId}/duyet`, {
+      xacNhan,
+      reviewNote,
+      qualityScore,
+      completionScore,
+    });
   }
 
   choToiDuyet(): Observable<BaoCao[]> {

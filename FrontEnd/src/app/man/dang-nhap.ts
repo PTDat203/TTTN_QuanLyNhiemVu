@@ -39,13 +39,12 @@ import { AuthService } from '../core/api.service';
 
         <div class="goi-y">
           <strong>Tài khoản demo</strong> — mật khẩu chung <code>123456</code>
-          <div class="hang">
-            <button type="button" class="nho" (click)="dienNhanh('manager1')">
-              manager1 · Người giao
-            </button>
-            <button type="button" class="nho" (click)="dienNhanh('nv.an')">
-              nv.an · Người thực hiện
-            </button>
+          <div class="luoi">
+            @for (tk of taiKhoanDemo; track tk.ten) {
+              <button type="button" class="nho" (click)="dienNhanh(tk.ten)">
+                <strong>{{ tk.ten }}</strong><br />{{ tk.moTa }}
+              </button>
+            }
           </div>
         </div>
       </form>
@@ -122,13 +121,14 @@ import { AuthService } from '../core/api.service';
         font-size: 13px;
         color: #64748b;
       }
-      .hang {
-        display: flex;
+      .luoi {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-top: 8px;
       }
       .nho {
-        flex: 1;
+        line-height: 1.4;
         padding: 7px;
         font-size: 12px;
         border: 1px solid #cbd5e1;
@@ -152,6 +152,14 @@ export class DangNhapComponent {
   password = '';
   readonly loi = signal('');
   readonly dangGui = signal(false);
+
+  /** Một tài khoản mỗi cấp, đủ để thử hết các luồng: giao việc, nhận việc, phạm vi xem. */
+  readonly taiKhoanDemo = [
+    { ten: 'giamdoc', moTa: 'Giám đốc' },
+    { ten: 'tp.phattrien', moTa: 'Trưởng phòng Phát triển' },
+    { ten: 'leader.be', moTa: 'Trưởng nhóm Backend' },
+    { ten: 'nv.cuong', moTa: 'Nhân viên Backend' },
+  ];
 
   dienNhanh(ten: string): void {
     this.username = ten;
