@@ -1,0 +1,11 @@
+# Dịch vụ nhúng ngữ nghĩa — cần Python 3.12 trở lên (đã chạy với 3.14).
+#
+# torch lấy từ PyPI trên Windows là bản CPU. Đủ dùng: mô hình nhỏ, mỗi lần gọi vài chục câu.
+#
+# KHÔNG dùng sentence-transformers: thư viện đó kéo theo scikit-learn, và tệp DLL của
+# scikit-learn từng bị Smart App Control của Windows 11 chặn. Dùng thẳng transformers rồi tự
+# lấy trung bình véc-tơ token — đã đối chiếu, kết quả trùng khớp tới 5×10⁻⁸.
+fastapi==0.141.1
+uvicorn==0.52.4
+transformers==5.17.0
+torch==2.14.0

@@ -5,6 +5,7 @@ using TaskApp.Api.Auth;
 using TaskApp.Api.Common;
 using TaskApp.Api.Dtos;
 using TaskApp.Api.Services;
+using TaskApp.Api.Services.Ai;
 
 namespace TaskApp.Api.Controllers;
 
@@ -25,12 +26,15 @@ public sealed class GoiYController : ControllerBase
     private readonly GoiYService _service;
     private readonly NguoiDungHienTai _hienTai;
     private readonly CauHinhGoiY _cauHinh;
+    private readonly DichVuNhung _nhung;
 
-    public GoiYController(GoiYService service, NguoiDungHienTai hienTai, IOptions<CauHinhGoiY> cauHinh)
+    public GoiYController(
+        GoiYService service, NguoiDungHienTai hienTai, IOptions<CauHinhGoiY> cauHinh, DichVuNhung nhung)
     {
         _service = service;
         _hienTai = hienTai;
         _cauHinh = cauHinh.Value;
+        _nhung = nhung;
     }
 
     /// <summary>Gợi ý người thực hiện phù hợp cho một nhiệm vụ.</summary>
@@ -41,7 +45,8 @@ public sealed class GoiYController : ControllerBase
     ///   <item>Đưa thẳng <c>title</c> và <c>description</c> khi đang gõ, chưa bấm lưu —
     ///         để xem gợi ý ngay trên màn tạo nhiệm vụ.</item>
     /// </list>
-    /// Mỗi ứng viên trả về kèm điểm bốn thành phần, số liệu thô và lý do tiếng Việt.
+    /// Kết quả gồm: AI đoán nhiệm vụ thuộc phòng nào, cần kỹ năng gì; rồi danh sách ứng viên, mỗi
+    /// người kèm điểm sáu thành phần, số liệu thô và lý do tiếng Việt.
     /// </remarks>
     [HttpPost("nguoi-thuc-hien")]
     [ProducesResponseType(typeof(GoiYResponse), StatusCodes.Status200OK)]
@@ -69,34 +74,49 @@ public sealed class GoiYController : ControllerBase
     }
 
     /// <summary>
-    /// Xem bộ trọng số đang dùng. Phục vụ việc giải thích mô hình khi trình bày kết quả.
+    /// Xem bộ tham số đang dùng và trạng thái dịch vụ AI. Phục vụ việc giải thích mô hình khi
+    /// trình bày kết quả, và để giao diện biết đang chạy bằng mô hình nhúng hay TF-IDF.
     /// </summary>
     [HttpGet("cau-hinh")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public IActionResult XemCauHinh() => Ok(new
+    public async Task<IActionResult> XemCauHinh(CancellationToken ct)
     {
-        phienBan = _cauHinh.PhienBan,
-        trongSo = new
+        var (sanSang, moHinh, loi) = await _nhung.KiemTraAsync(ct);
+        var c = _cauHinh;
+
+        return Ok(new
         {
-            kyNang = _cauHinh.TrongSoKyNang,
-            kinhNghiem = _cauHinh.TrongSoKinhNghiem,
-            dungHan = _cauHinh.TrongSoDungHan,
-            khoiLuong = _cauHinh.TrongSoKhoiLuong,
-            tong = _cauHinh.TongTrongSo
-        },
-        thamSo = new
-        {
-            nguongKinhNghiem = _cauHinh.NguongKinhNghiem,
-            nguongKhoiLuong = _cauHinh.NguongKhoiLuong,
-            tyLeDungHanTienNghiem = _cauHinh.TyLeDungHanTienNghiem,
-            soQuanSatAo = _cauHinh.SoQuanSatAo
-        },
-        giaiThich = new
-        {
-            kyNang = "TF-IDF + cosine giữa nội dung nhiệm vụ và hồ sơ kỹ năng đã khai.",
-            kinhNghiem = "Số nhiệm vụ đã hoàn thành, thang log để người làm nhiều không áp đảo tuyệt đối.",
-            dungHan = "Tỷ lệ hoàn thành trước hạn, làm mượt Laplace để người ít dữ liệu không bị điểm cực đoan.",
-            khoiLuong = "Càng ít việc đang gánh thì điểm càng cao, nhằm san đều khối lượng."
-        }
-    });
+            phienBan = c.PhienBan,
+            dichVuNhung = new { sanSang, moHinh, loi, soVecToDangDem = _nhung.SoMucDangDem },
+            trongSo = new
+            {
+                nguNghia = c.TrongSoNguNghia,
+                mucKyNang = c.TrongSoMucKyNang,
+                hieuSuat = c.TrongSoHieuSuat,
+                viecTuongTu = c.TrongSoViecTuongTu,
+                dungHan = c.TrongSoDungHan,
+                khoiLuong = c.TrongSoKhoiLuong,
+                tong = c.TongTrongSo
+            },
+            thamSo = new
+            {
+                hieuSuatTienNghiem = c.HieuSuatTienNghiem,
+                tyLeDungHanTienNghiem = c.TyLeDungHanTienNghiem,
+                soQuanSatAo = c.SoQuanSatAo,
+                nguongKhoiLuong = c.NguongKhoiLuong,
+                soViecTuongTu = c.SoViecTuongTu,
+                mucKyNangMacDinh = c.MucKyNangMacDinh
+            },
+            hieuChinh = new { nhung = c.Nhung, tfIdf = c.TfIdf },
+            giaiThich = new
+            {
+                nguNghia = "Độ gần nghĩa giữa nội dung nhiệm vụ và hồ sơ người (chức danh, kỹ năng, học vấn), đo bằng mô hình nhúng đa ngữ.",
+                mucKyNang = "Có đủ mức ở những kỹ năng nhiệm vụ đòi hỏi không. Không có kỹ năng thì 0, đủ mức thì 1.",
+                hieuSuat = "Điểm đánh giá chất lượng các việc đã hoàn thành, làm mượt Laplace để người ít dữ liệu không bị điểm cực đoan.",
+                viecTuongTu = "Đã làm những việc giống việc này chưa, và làm tốt tới đâu. Chưa làm việc nào giống thì trung tính.",
+                dungHan = "Tỷ lệ hoàn thành trước hạn, làm mượt Laplace.",
+                khoiLuong = "Càng ít việc đang gánh thì điểm càng cao, để việc không dồn hết vào người giỏi nhất."
+            }
+        });
+    }
 }

@@ -3,6 +3,8 @@ using TaskApp.Api.Common;
 using TaskApp.Api.Data;
 using TaskApp.Api.Dtos;
 using TaskApp.Api.Entities;
+using TaskApp.Api.Services.Ai;
+using TaskApp.Api.Services.GoiY;
 
 namespace TaskApp.Api.Services;
 
@@ -22,11 +24,13 @@ namespace TaskApp.Api.Services;
 public sealed class NhiemVuService
 {
     private readonly TaskDbContext _db;
+    private readonly GoiYService _goiY;
     private readonly ILogger<NhiemVuService> _log;
 
-    public NhiemVuService(TaskDbContext db, ILogger<NhiemVuService> log)
+    public NhiemVuService(TaskDbContext db, GoiYService goiY, ILogger<NhiemVuService> log)
     {
         _db = db;
+        _goiY = goiY;
         _log = log;
     }
 
@@ -256,6 +260,12 @@ public sealed class NhiemVuService
             GanNguoiThucHien(nv, nguoiNhan);
             nv.StatusCode = TrangThaiNhiemVu.DaGiao;
         }
+        else
+        {
+            // Chưa giao ai: để AI đoán sẵn phòng thực thi, nhóm phụ trách và kỹ năng cần có,
+            // thay vì bắt người giao tự chọn phòng.
+            await GanSuyLuanAiAsync(nv, creatorId, ct);
+        }
 
         _db.Tasks.Add(nv);
         await _db.SaveChangesAsync(ct);
@@ -429,6 +439,50 @@ public sealed class NhiemVuService
     // =====================================================================
     // HỖ TRỢ
     // =====================================================================
+
+    /// <summary>
+    /// Nhờ AI đoán phòng thực thi, nhóm phụ trách và kỹ năng cần có cho nhiệm vụ chưa giao.
+    ///
+    /// <para>
+    /// Chỉ gắn phòng khi AI CHẮC CHẮN và phòng đó nằm trong phạm vi người tạo: trưởng nhóm Backend
+    /// tạo việc mà AI đoán thuộc phòng Nhân sự thì không tự đẩy việc sang phòng người khác. Kỹ năng
+    /// thì luôn gắn, nguồn AI, để lần gợi ý sau dùng lại và để đo được AI trích đúng tới đâu.
+    /// </para>
+    /// <para>
+    /// Làm theo kiểu "được thì tốt": AI lỗi thì bỏ qua, việc tạo nhiệm vụ không bao giờ hỏng vì AI.
+    /// Đến lúc giao việc, phòng và nhóm sẽ được ghi đè theo người nhận thật.
+    /// </para>
+    /// </summary>
+    private async Task GanSuyLuanAiAsync(TaskItem nv, long creatorId, CancellationToken ct)
+    {
+        try
+        {
+            var kq = await _goiY.SuyLuanAsync(VanBanHoSo.NhiemVu(nv.Title, nv.Description), ct);
+            var s = kq.SuyLuan;
+
+            if (s.KetLuan == KetLuanPhongBan.ChacChan)
+            {
+                var phong = s.CacPhong[0].DonVi.Id;
+                var nguoiTao = await PhamViToChuc.NapAsync(_db, creatorId, ct);
+                if (nguoiTao?.VaiTro == VaiTro.GiamDoc || nguoiTao?.DepartmentId == phong)
+                {
+                    nv.DepartmentId = phong;
+                    // Nhóm phải thuộc đúng phòng vừa gắn — database chặn bằng khoá ngoại ghép.
+                    if (s.Nhom is { } nhom && nhom.DonVi.DepartmentId == phong) nv.TeamId = nhom.DonVi.Id;
+                }
+            }
+
+            foreach (var k in s.KyNang)
+                nv.KyNangYeuCau.Add(new TaskRequiredSkill { SkillId = k.SkillId, Source = NguonKyNang.AI });
+
+            _log.LogInformation("AI đoán nhiệm vụ mới \"{TieuDe}\": {KetLuan}, phòng {Phong}, {SoKyNang} kỹ năng",
+                nv.Title, s.KetLuan, nv.DepartmentId, s.KyNang.Count);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.LogWarning(ex, "Không suy luận được phòng ban cho nhiệm vụ mới \"{TieuDe}\"", nv.Title);
+        }
+    }
 
     /// <summary>
     /// Gắn người thực hiện, đồng thời gắn phòng thực thi và nhóm phụ trách theo người đó.

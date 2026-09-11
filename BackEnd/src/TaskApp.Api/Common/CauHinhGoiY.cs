@@ -1,81 +1,102 @@
 namespace TaskApp.Api.Common;
 
 /// <summary>
-/// Bộ trọng số và tham số của mô hình gợi ý người thực hiện.
+/// Bộ trọng số và tham số của mô hình gợi ý người thực hiện — phiên bản 2.
+///
+/// <code>
+/// Điểm = 0,40 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
+///      + 0,10 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng
+/// </code>
 ///
 /// <para>
-/// Tách ra thành lớp riêng để chỉnh được mà không phải sửa thuật toán, và để khi bảo vệ
-/// có thể chỉ thẳng vào từng con số mà giải thích. Đọc từ mục <c>GoiY</c> trong cấu hình.
+/// Đọc từ mục <c>GoiY</c> trong cấu hình. Tách thành lớp riêng để chỉnh được mà không phải sửa
+/// thuật toán, và để khi bảo vệ có thể chỉ thẳng vào từng con số mà giải thích.
 /// </para>
 /// </summary>
 public sealed class CauHinhGoiY
 {
     public const string Muc = "GoiY";
 
-    /// <summary>Trọng số độ khớp kỹ năng (TF-IDF + cosine). Cao nhất vì đây là căn cứ trực tiếp nhất.</summary>
-    public double TrongSoKyNang { get; set; } = 0.40;
+    // ------------------------------------------------------------------ trọng số, tổng = 1
 
-    /// <summary>Trọng số kinh nghiệm — tổng số nhiệm vụ đã hoàn thành.</summary>
-    public double TrongSoKinhNghiem { get; set; } = 0.20;
+    /// <summary>Độ khớp ngữ nghĩa giữa nội dung nhiệm vụ và hồ sơ người. Cao nhất vì là căn cứ trực tiếp nhất.</summary>
+    public double TrongSoNguNghia { get; set; } = 0.40;
 
-    /// <summary>Trọng số tỷ lệ đúng hạn.</summary>
-    public double TrongSoDungHan { get; set; } = 0.25;
+    /// <summary>Có đủ mức ở những kỹ năng nhiệm vụ đòi hỏi hay không.</summary>
+    public double TrongSoMucKyNang { get; set; } = 0.15;
 
-    /// <summary>Trọng số mức độ rảnh — càng ít việc đang gánh thì càng cao.</summary>
-    public double TrongSoKhoiLuong { get; set; } = 0.15;
+    /// <summary>Điểm đánh giá chất lượng các việc đã hoàn thành.</summary>
+    public double TrongSoHieuSuat { get; set; } = 0.15;
 
-    /// <summary>
-    /// Số nhiệm vụ hoàn thành để đạt điểm kinh nghiệm tối đa.
-    /// Thang log nên 10 việc đạt 1,0 còn 3 việc đã được khoảng 0,6 — người mới vẫn có cơ hội.
-    /// </summary>
-    public int NguongKinhNghiem { get; set; } = 10;
+    /// <summary>Đã làm những việc giống việc này chưa, và làm tốt tới đâu.</summary>
+    public double TrongSoViecTuongTu { get; set; } = 0.10;
 
-    /// <summary>
-    /// Số việc đang mở coi là đã đầy tải. Vượt ngưỡng này thì điểm khối lượng bằng 0.
-    /// Tính theo tổng trọng số ưu tiên chứ không phải đếm đầu việc.
-    /// </summary>
-    public double NguongKhoiLuong { get; set; } = 8.0;
+    /// <summary>Tỷ lệ hoàn thành đúng hạn.</summary>
+    public double TrongSoDungHan { get; set; } = 0.10;
+
+    /// <summary>Càng ít việc đang gánh càng cao — để việc được san đều, không dồn vào người giỏi nhất.</summary>
+    public double TrongSoKhoiLuong { get; set; } = 0.10;
+
+    // ------------------------------------------------------------------ người ít dữ liệu
 
     /// <summary>
-    /// Tỷ lệ đúng hạn giả định cho người chưa có lịch sử (làm mượt Laplace).
-    /// Không cho 0 vì như thế người mới vĩnh viễn không bao giờ được gợi ý.
+    /// Hiệu suất giả định khi chưa có đánh giá nào — tương đương 3,6/5. Không cho 0: nếu vậy người
+    /// mới vĩnh viễn không lọt vào gợi ý, và vĩnh viễn không có cơ hội có dữ liệu.
     /// </summary>
+    public double HieuSuatTienNghiem { get; set; } = 0.65;
+
+    /// <summary>Tỷ lệ đúng hạn giả định khi chưa có lịch sử.</summary>
     public double TyLeDungHanTienNghiem { get; set; } = 0.70;
 
     /// <summary>
-    /// Số quan sát ảo của làm mượt Laplace. Càng lớn thì người ít dữ liệu càng bị kéo về
-    /// giá trị tiên nghiệm, tránh việc làm đúng hạn 1/1 việc đã được điểm tuyệt đối.
+    /// Số quan sát ảo khi làm mượt Laplace. Càng lớn thì người ít dữ liệu càng bị kéo về giá trị
+    /// tiên nghiệm — tránh chuyện đúng hạn 1/1 việc đã được điểm tuyệt đối.
     /// </summary>
     public double SoQuanSatAo { get; set; } = 5.0;
+
+    // ------------------------------------------------------------------ tham số khác
+
+    /// <summary>Tổng trọng số ưu tiên (HIGH 3, MEDIUM 2, LOW 1) coi là đầy tải — điểm khối lượng về 0.</summary>
+    public double NguongKhoiLuong { get; set; } = 8.0;
+
+    /// <summary>Số việc gần nhất đem ra so, cả khi chấm "việc tương tự" lẫn khi chấm phòng ban.</summary>
+    public int SoViecTuongTu { get; set; } = 3;
+
+    /// <summary>Mức kỳ vọng khi nhiệm vụ đòi một kỹ năng mà không nói mức. Mức 3 là "tự làm độc lập được".</summary>
+    public int MucKyNangMacDinh { get; set; } = 3;
+
+    /// <summary>Số kỹ năng tối đa AI được trích ra từ một nhiệm vụ.</summary>
+    public int SoKyNangTrichToiDa { get; set; } = 4;
 
     /// <summary>Số ứng viên trả về mặc định.</summary>
     public int SoUngVienMacDinh { get; set; } = 5;
 
-    /// <summary>
-    /// Ngưỡng điểm cosine để coi là "thật sự khớp kỹ năng".
-    ///
-    /// <para>
-    /// Dưới ngưỡng này thường chỉ là trùng vài từ vụn trong mô tả kỹ năng chứ không phải
-    /// liên quan chuyên môn thật. Ví dụ nhiệm vụ "Chuẩn bị tiệc tất niên" vẫn được điểm
-    /// khoảng 0,1 với một hồ sơ bất kỳ chỉ vì chung một hai từ thông dụng.
-    /// </para>
-    /// <para>
-    /// Ngưỡng chỉ dùng khi <b>viết lý do</b> và khi quyết định có cảnh báo hay không —
-    /// không cắt điểm, vì cắt sẽ làm mất thông tin xếp hạng giữa các ứng viên đều khớp yếu.
-    /// </para>
-    /// </summary>
-    public double NguongKhopKyNang { get; set; } = 0.15;
+    // ------------------------------------------------------------------ hiệu chỉnh riêng từng phương pháp
 
-    /// <summary>Phiên bản bộ trọng số, ghi kèm kết quả để đối chiếu khi hiệu chỉnh.</summary>
-    public string PhienBan { get; set; } = "v1.0";
+    /// <summary>Bộ ngưỡng của mô hình nhúng. Giá trị thật hiệu chỉnh bằng dữ liệu, đặt trong appsettings.json.</summary>
+    public HieuChinhPhuongPhap Nhung { get; set; } = new()
+    {
+        BatDoiXung = new NguongChuanHoa { Thap = 0.78, Cao = 0.88 },
+        DoiXung = new NguongChuanHoa { Thap = 0.82, Cao = 0.94 }
+    };
 
-    /// <summary>Tổng bốn trọng số. Phải bằng 1 để điểm tổng nằm trong [0, 1].</summary>
+    /// <summary>Bộ ngưỡng của TF-IDF.</summary>
+    public HieuChinhPhuongPhap TfIdf { get; set; } = new()
+    {
+        BatDoiXung = new NguongChuanHoa { Thap = 0.00, Cao = 0.35 },
+        DoiXung = new NguongChuanHoa { Thap = 0.00, Cao = 0.40 }
+    };
+
+    /// <summary>Phiên bản bộ tham số, ghi kèm kết quả để đối chiếu khi hiệu chỉnh.</summary>
+    public string PhienBan { get; set; } = "v2.0-chua-hieu-chinh";
+
     public double TongTrongSo =>
-        TrongSoKyNang + TrongSoKinhNghiem + TrongSoDungHan + TrongSoKhoiLuong;
+        TrongSoNguNghia + TrongSoMucKyNang + TrongSoHieuSuat +
+        TrongSoViecTuongTu + TrongSoDungHan + TrongSoKhoiLuong;
 
     /// <summary>
-    /// Kiểm cấu hình. Tổng trọng số lệch khỏi 1 sẽ khiến điểm tổng vượt 1 hoặc không bao giờ
-    /// đạt 1, làm mọi so sánh và ngưỡng phía sau sai theo.
+    /// Kiểm cấu hình ngay khi khởi động. Tổng trọng số lệch khỏi 1 thì điểm tổng vượt 1 hoặc không
+    /// bao giờ đạt 1, làm mọi so sánh và ngưỡng phía sau sai theo.
     /// </summary>
     public void KiemTra()
     {
@@ -85,5 +106,56 @@ public sealed class CauHinhGoiY
                 $"Tổng trọng số của mô hình gợi ý phải bằng 1,00 nhưng đang là {TongTrongSo:0.###}. " +
                 "Kiểm tra lại mục 'GoiY' trong cấu hình.");
         }
+
+        Nhung.KiemTra("GoiY:Nhung");
+        TfIdf.KiemTra("GoiY:TfIdf");
     }
+}
+
+/// <summary>
+/// Bộ ngưỡng của MỘT phương pháp đo độ gần nghĩa.
+///
+/// <para>
+/// Mỗi phương pháp một bộ riêng, vì thang điểm thô của chúng khác hẳn nhau: cosine của mô hình
+/// nhúng dồn trong khoảng 0,8–0,9, cosine TF-IDF trải từ 0 tới 0,4. Dùng chung một bộ thì phương
+/// pháp này đúng, phương pháp kia sai — và đem so hai phương pháp cũng không còn công bằng.
+/// </para>
+/// </summary>
+public sealed class HieuChinhPhuongPhap
+{
+    /// <summary>Quy điểm thô về 0..1 khi so nhiệm vụ với hồ sơ / mô tả phòng / nhóm / kỹ năng.</summary>
+    public NguongChuanHoa BatDoiXung { get; set; } = new() { Thap = 0, Cao = 1 };
+
+    /// <summary>Quy điểm thô về 0..1 khi so nhiệm vụ với nhiệm vụ.</summary>
+    public NguongChuanHoa DoiXung { get; set; } = new() { Thap = 0, Cao = 1 };
+
+    /// <summary>Phòng đứng đầu dưới mức này (thang 0..1) thì coi là không xác định được phòng.</summary>
+    public double PhongBanSan { get; set; } = 0.35;
+
+    /// <summary>Phòng đứng đầu phải hơn phòng thứ hai ít nhất chừng này mới coi là chắc chắn.</summary>
+    public double PhongBanCachBiet { get; set; } = 0.10;
+
+    /// <summary>Kỹ năng khớp dưới mức này thì không coi là nhiệm vụ đòi hỏi.</summary>
+    public double KyNangSan { get; set; } = 0.40;
+
+    /// <summary>Chỉ lấy những kỹ năng không kém kỹ năng khớp nhất quá chừng này.</summary>
+    public double KyNangKhoangCach { get; set; } = 0.15;
+
+    public void KiemTra(string ten)
+    {
+        if (BatDoiXung.Cao <= BatDoiXung.Thap || DoiXung.Cao <= DoiXung.Thap)
+            throw new InvalidOperationException($"Ngưỡng chuẩn hoá ở '{ten}': Cao phải lớn hơn Thap.");
+    }
+}
+
+/// <summary>Cặp ngưỡng quy độ tương đồng thô về thang 0..1.</summary>
+public sealed class NguongChuanHoa
+{
+    /// <summary>Điểm thô coi là "không liên quan" — quy về 0.</summary>
+    public double Thap { get; set; }
+
+    /// <summary>Điểm thô coi là "rất liên quan" — quy về 1.</summary>
+    public double Cao { get; set; }
+
+    public double ChuanHoa(double tho) => Math.Clamp((tho - Thap) / (Cao - Thap), 0.0, 1.0);
 }

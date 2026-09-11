@@ -4,6 +4,8 @@ using Microsoft.OpenApi.Models;
 using TaskApp.Api.Auth;
 using TaskApp.Api.Common;
 using TaskApp.Api.Services;
+using TaskApp.Api.Services.Ai;
+using TaskApp.Api.Services.GoiY;
 using TaskApp.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,9 +71,31 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NhiemVuService>();
 builder.Services.AddScoped<XuLyNhiemVuService>();
 
-// Bo trong so mo hinh goi y — doc tu muc "GoiY", co gia tri mac dinh neu thieu.
+// ---------------------------------------------------------------------------
+// Goi y nguoi thuc hien (AI)
+// ---------------------------------------------------------------------------
+// Bo trong so va nguong — doc tu muc "GoiY", co gia tri mac dinh neu thieu.
 builder.Services.Configure<CauHinhGoiY>(builder.Configuration.GetSection(CauHinhGoiY.Muc));
+
+// Dich vu nhung ngu nghia chay rieng bang Python (BackEnd/ai). Tat hoac khong chay thi phan
+// goi y tu lui ve TF-IDF — ung dung van chay binh thuong, khong phu thuoc vao Python.
+builder.Services.Configure<CauHinhDichVuNhung>(builder.Configuration.GetSection(CauHinhDichVuNhung.Muc));
+var cauHinhNhung = builder.Configuration.GetSection(CauHinhDichVuNhung.Muc).Get<CauHinhDichVuNhung>()
+                   ?? new CauHinhDichVuNhung();
+builder.Services.AddHttpClient(DichVuNhung.TenHttpClient, c =>
+{
+    c.BaseAddress = new Uri(cauHinhNhung.Url.TrimEnd('/') + "/");
+    c.Timeout = TimeSpan.FromSeconds(cauHinhNhung.ThoiGianChoGiay);
+});
+
+// Singleton vi giu bo nho dem vec-to suot doi ung dung; bo xep hang khong giu trang thai.
+builder.Services.AddSingleton<DichVuNhung>();
+builder.Services.AddSingleton<DoTuongDongNhung>();
+builder.Services.AddSingleton<DoTuongDongTfIdf>();
+builder.Services.AddSingleton<BoXepHang>();
 builder.Services.AddScoped<GoiYService>();
+// Hieu chinh va danh gia mo hinh tren du lieu lich su (chi Giam doc goi duoc).
+builder.Services.AddScoped<DanhGiaGoiY>();
 
 // ---------------------------------------------------------------------------
 // Dich vu web
@@ -146,7 +170,7 @@ app.MapControllers();
 // ---------------------------------------------------------------------------
 // Endpoint chan doan ket noi + anh xa
 // ---------------------------------------------------------------------------
-// Doc thu ca 7 bang. Dung de xac nhan anh xa EF Core khop schema Oracle that:
+// Doc thu ca 12 bang. Dung de xac nhan anh xa EF Core khop schema Oracle that:
 // neu mot cot map sai ten, Oracle bao ORA-00904 va endpoint nay chi ra ngay bang nao hong.
 app.MapGet("/api/he-thong/kiem-tra-ket-noi", async (TaskDbContext db, CancellationToken ct) =>
 {

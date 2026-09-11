@@ -42,6 +42,14 @@ FrontEnd/out-tsc/
 FrontEnd/.angular/
 FrontEnd/coverage/
 
+# ---------- Python (dịch vụ AI ở BackEnd/ai) ----------
+.venv/
+__pycache__/
+*.pyc
+# Mô hình tải về lúc chạy lần đầu, khoảng 470 MB
+BackEnd/ai/.cache/
+BackEnd/ai/*.log
+
 # ---------- IDE ----------
 .idea/
 .vscode/*

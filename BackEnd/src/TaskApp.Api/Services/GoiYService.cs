@@ -4,83 +4,60 @@ using Microsoft.Extensions.Options;
 using TaskApp.Api.Common;
 using TaskApp.Api.Data;
 using TaskApp.Api.Dtos;
+using TaskApp.Api.Services.Ai;
+using TaskApp.Api.Services.GoiY;
 
 namespace TaskApp.Api.Services;
 
 /// <summary>
 /// Gợi ý người thực hiện phù hợp — chức năng trọng tâm của đề tài.
 ///
-/// <para><b>Cách chấm điểm.</b> Bốn đặc trưng, mỗi cái quy về [0, 1] rồi cộng có trọng số:</para>
-/// <code>
-/// Điểm = 0,40 × KỹNăng + 0,20 × KinhNghiệm + 0,25 × ĐúngHạn + 0,15 × KhốiLượng
-/// </code>
-/// <list type="bullet">
-///   <item><b>Kỹ năng</b> — TF-IDF + cosine giữa nội dung nhiệm vụ và hồ sơ kỹ năng.</item>
-///   <item><b>Kinh nghiệm</b> — số nhiệm vụ đã hoàn thành, thang log để người làm nhiều
-///         không áp đảo tuyệt đối.</item>
-///   <item><b>Đúng hạn</b> — tỷ lệ hoàn thành trước hạn, làm mượt Laplace.</item>
-///   <item><b>Khối lượng</b> — càng ít việc đang gánh thì điểm càng cao, để san đều việc.</item>
-/// </list>
-///
 /// <para>
-/// <b>Giải thích được là yêu cầu bắt buộc, không phải điểm cộng.</b> Mỗi ứng viên trả về
-/// kèm điểm từng thành phần, số liệu thô và lý do bằng tiếng Việt. Người giao phải hiểu
-/// vì sao hệ thống đề xuất người này thì mới dám tin — và quyết định cuối cùng vẫn là của họ.
+/// Lớp này lo phần "bên ngoài": kiểm quyền, xác định phạm vi ứng viên, nạp dữ liệu, rồi dịch kết
+/// quả sang tiếng Việt cho người đọc. Toàn bộ phần suy luận và chấm điểm nằm ở <see cref="BoXepHang"/>.
 /// </para>
 /// <para>
-/// Không lưu bảng kết quả AI nào. Điểm tính tại thời điểm gọi, vì dữ liệu đầu vào
-/// (khối lượng việc, lịch sử hoàn thành) thay đổi liên tục nên lưu lại là lỗi thời ngay.
+/// <b>Giải thích được là yêu cầu bắt buộc, không phải điểm cộng.</b> Mỗi ứng viên trả về kèm điểm
+/// từng thành phần, số liệu thô và lý do bằng tiếng Việt; kết luận phòng ban cũng kèm điểm từng
+/// phòng. Người giao phải hiểu vì sao hệ thống đề xuất người này thì mới dám tin — và quyết định
+/// cuối cùng vẫn là của họ.
+/// </para>
+/// <para>
+/// Không lưu kết quả gợi ý. Khối lượng việc và lịch sử thay đổi liên tục, lưu lại là lỗi thời ngay.
 /// </para>
 /// </summary>
 public sealed class GoiYService
 {
     private readonly TaskDbContext _db;
+    private readonly BoXepHang _boXepHang;
     private readonly CauHinhGoiY _cauHinh;
     private readonly ILogger<GoiYService> _log;
 
-    public GoiYService(TaskDbContext db, IOptions<CauHinhGoiY> cauHinh, ILogger<GoiYService> log)
+    public GoiYService(TaskDbContext db, BoXepHang boXepHang, IOptions<CauHinhGoiY> cauHinh, ILogger<GoiYService> log)
     {
         _db = db;
+        _boXepHang = boXepHang;
         _cauHinh = cauHinh.Value;
-        _cauHinh.KiemTra();
         _log = log;
     }
 
-    /// <summary>Hồ sơ một ứng viên, gom sẵn từ CSDL để chấm điểm.</summary>
-    private sealed class HoSo
-    {
-        public long UserId { get; init; }
-        public string FullName { get; init; } = string.Empty;
-        public List<(string Ten, int Muc, string? MoTa)> KyNang { get; init; } = new();
-        public int SoHoanThanh { get; set; }
-        public int SoDungHan { get; set; }
-        public int SoDangLam { get; set; }
-        public double TaiHienTai { get; set; }
-        public List<string> CacTu { get; set; } = new();
-        public TfIdf.VanBanVector Vector { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Chấm điểm và xếp hạng ứng viên cho một nhiệm vụ.
-    /// </summary>
+    /// <summary>Chấm điểm và xếp hạng ứng viên cho một nhiệm vụ.</summary>
     public async Task<KetQua<GoiYResponse>> GoiYAsync(
         GoiYRequest yeuCau, long nguoiGoiId, CancellationToken ct = default)
     {
         var dongHo = Stopwatch.StartNew();
-        var canhBao = new List<string>();
 
-        // --- 1. Xác định nội dung nhiệm vụ cần khớp ---
-        string tieuDe = yeuCau.Title ?? string.Empty;
-        string? moTa = yeuCau.Description;
+        // --- 1. Nội dung nhiệm vụ ---
+        var tieuDe = yeuCau.Title;
+        var moTa = yeuCau.Description;
         long? assigneeHienTai = null;
+        IReadOnlyList<KyNangCan>? kyNangCoSan = null;
 
-        if (yeuCau.TaskId.HasValue)
+        if (yeuCau.TaskId is { } taskId)
         {
-            var nv = await _db.Tasks.AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == yeuCau.TaskId.Value, ct);
-
+            var nv = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == taskId, ct);
             if (nv is null)
-                return KetQua<GoiYResponse>.KhongTimThay($"Không tìm thấy nhiệm vụ #{yeuCau.TaskId}.");
+                return KetQua<GoiYResponse>.KhongTimThay($"Không tìm thấy nhiệm vụ #{taskId}.");
 
             if (nv.CreatorId != nguoiGoiId)
                 return KetQua<GoiYResponse>.KhongCoQuyen(
@@ -89,333 +66,264 @@ public sealed class GoiYService
             tieuDe = nv.Title;
             moTa = nv.Description;
             assigneeHienTai = nv.AssigneeId;
+            kyNangCoSan = await NapDuLieuGoiY.KyNangDaLuuAsync(_db, taskId, ct);
         }
 
-        var noiDung = $"{tieuDe} {moTa}".Trim();
+        var noiDung = VanBanHoSo.NhiemVu(tieuDe, moTa);
         if (string.IsNullOrWhiteSpace(noiDung))
         {
             return KetQua<GoiYResponse>.DuLieuKhongHopLe(
                 "Cần có tiêu đề hoặc mô tả nhiệm vụ để tìm người phù hợp.");
         }
 
-        // --- 2. Lọc cứng: chỉ những người mà người gọi ĐƯỢC GIAO VIỆC cho ---
-        // Dùng đúng quy tắc của nút "Giao" (PhamViToChuc), nên AI không bao giờ gợi ý một
-        // người mà lúc giao thật backend lại từ chối. Trừ người đang giữ chính việc này.
-        var viTriNguoiGoi = await PhamViToChuc.NapAsync(_db, nguoiGoiId, ct);
-        if (viTriNguoiGoi is null)
+        // --- 2. Phạm vi: chỉ những người mà người gọi ĐƯỢC GIAO VIỆC cho ---
+        // Dùng đúng quy tắc của nút "Giao" (PhamViToChuc), nên AI không bao giờ gợi ý một người
+        // mà lúc giao thật backend lại từ chối. Trừ người đang giữ chính việc này.
+        var viTri = await PhamViToChuc.NapAsync(_db, nguoiGoiId, ct);
+        if (viTri is null)
             return KetQua<GoiYResponse>.KhongCoQuyen("Không xác định được người gọi.");
 
-        var ungVien = await _db.Users.AsNoTracking()
-            .NguoiNhanDuoc(viTriNguoiGoi)
+        var ungVienIds = await _db.Users.AsNoTracking()
+            .NguoiNhanDuoc(viTri)
             .Where(u => assigneeHienTai == null || u.Id != assigneeHienTai)
-            .Select(u => new { u.Id, u.FullName })
+            .Select(u => u.Id)
             .ToListAsync(ct);
 
-        if (ungVien.Count == 0)
+        if (ungVienIds.Count == 0)
         {
             return KetQua<GoiYResponse>.ThatBai(
                 "Không có ai trong phạm vi của bạn để giao việc.", MaLoiChung.LoiNghiepVu);
         }
 
-        var hoSo = ungVien.ToDictionary(
-            u => u.Id,
-            u => new HoSo { UserId = u.Id, FullName = u.FullName });
+        // --- 3. Suy luận và xếp hạng ---
+        var dauVao = await NapDuLieuGoiY.NapAsync(
+            _db, noiDung, ungVienIds, moc: null, boQuaTaskId: yeuCau.TaskId, kyNangCoSan, ct);
+        var kq = await _boXepHang.ChayAsync(dauVao, chiDungTfIdf: false, ct);
 
-        await NapKyNangAsync(hoSo, ct);
-        await NapLichSuAsync(hoSo, ct);
-        await NapKhoiLuongAsync(hoSo, ct);
-
-        // --- 3. Vector hoá: dựng IDF trên chính tập ứng viên ---
-        // IDF phải tính trên tập hồ sơ chứ không phải tập nhiệm vụ, vì mục tiêu là tìm từ
-        // nào hiếm GIỮA CÁC ỨNG VIÊN — đó mới là từ giúp phân biệt người này với người kia.
-        foreach (var hs in hoSo.Values)
-        {
-            hs.CacTu = TachTuHoSo(hs);
-        }
-
-        var idf = TfIdf.DungIdf(hoSo.Values.Select(h => h.CacTu).ToList());
-
-        foreach (var hs in hoSo.Values)
-        {
-            hs.Vector = TfIdf.VectorHoa(hs.CacTu, idf);
-        }
-
-        var vectorNhiemVu = TfIdf.VectorHoa(XuLyVanBan.TachTu(noiDung), idf);
-
-        // --- 4. Chấm điểm ---
-        var ketQua = hoSo.Values
-            .Select(hs => ChamDiem(hs, vectorNhiemVu, noiDung))
-            .OrderByDescending(x => x.Diem)
-            // Điểm bằng nhau thì ưu tiên người rảnh hơn, rồi đến tên cho thứ tự ổn định.
-            .ThenBy(x => x.SoLieu.TaiHienTai)
-            .ThenBy(x => x.FullName, StringComparer.CurrentCulture)
-            .ToList();
-
-        // Cảnh báo theo NGƯỠNG chứ không theo "bằng 0". Điểm cosine rất nhỏ (0,05–0,12)
-        // hầu như luôn xuất hiện do trùng vài từ thông dụng, nên nếu chỉ cảnh báo khi tất cả
-        // bằng đúng 0 thì gần như không bao giờ cảnh báo — và người giao sẽ tưởng gợi ý
-        // dựa trên chuyên môn trong khi thực chất không phải.
-        var diemKyNangCaoNhat = ketQua.Count > 0 ? ketQua.Max(x => x.ChiTietDiem.KyNang.Diem) : 0;
-        if (diemKyNangCaoNhat < _cauHinh.NguongKhopKyNang)
-        {
-            canhBao.Add(
-                "Không nhân viên nào có kỹ năng khai báo khớp rõ rệt với nội dung nhiệm vụ " +
-                $"(độ khớp cao nhất chỉ {diemKyNangCaoNhat:0.00}). Thứ hạng dưới đây chủ yếu dựa trên " +
-                "kinh nghiệm, tỷ lệ đúng hạn và khối lượng việc, không phải chuyên môn.");
-        }
-
+        // --- 4. Dịch sang dạng người đọc được ---
         var soLuong = Math.Clamp(yeuCau.SoLuong ?? _cauHinh.SoUngVienMacDinh, 1, 50);
-        var topN = ketQua.Take(soLuong).ToList();
-        for (var i = 0; i < topN.Count; i++) topN[i].ThuHang = i + 1;
+        var ungVien = kq.UngVien.Take(soLuong).Select((x, i) => ChuyenDoi(x, i + 1)).ToList();
 
         dongHo.Stop();
         _log.LogInformation(
-            "Gợi ý cho \"{TieuDe}\": xét {SoUngVien} ứng viên trong {Ms}ms, dẫn đầu là {Top} ({Diem})",
-            tieuDe, ungVien.Count, dongHo.ElapsedMilliseconds,
-            topN.FirstOrDefault()?.FullName, topN.FirstOrDefault()?.Diem);
+            "Gợi ý cho \"{TieuDe}\" bằng {PhuongPhap}: phòng {KetLuan}, xét {SoXet}/{SoPhamVi} người " +
+            "trong {Ms}ms, dẫn đầu là {Top} ({Diem})",
+            tieuDe, kq.PhuongPhap, kq.SuyLuan.KetLuan, kq.UngVien.Count, kq.SoTrongPhamVi,
+            dongHo.ElapsedMilliseconds, ungVien.FirstOrDefault()?.FullName, ungVien.FirstOrDefault()?.Diem);
 
         return KetQua<GoiYResponse>.Ok(new GoiYResponse
         {
             PhienBanTrongSo = _cauHinh.PhienBan,
+            PhuongPhap = kq.PhuongPhap,
             NoiDungDaDung = noiDung,
-            SoUngVienDaXet = ungVien.Count,
-            CanhBao = canhBao,
-            UngVien = topN,
+            SoUngVienTrongPhamVi = kq.SoTrongPhamVi,
+            SoUngVienDaXet = kq.UngVien.Count,
+            SuyLuanPhongBan = ChuyenDoi(kq.SuyLuan),
+            KyNangYeuCau = kq.SuyLuan.KyNang.Select(k => new KyNangYeuCauDto
+            {
+                SkillId = k.SkillId, Code = k.Code, Ten = k.Ten, MucYeuCau = k.Muc, Nguon = k.Nguon, DoKhop = k.DoKhop
+            }).ToList(),
+            CanhBao = SinhCanhBao(kq),
+            UngVien = ungVien,
             ThoiGianMs = dongHo.ElapsedMilliseconds
         });
     }
 
-    // =====================================================================
-    // NẠP DỮ LIỆU
-    // =====================================================================
-
-    private async Task NapKyNangAsync(Dictionary<long, HoSo> hoSo, CancellationToken ct)
-    {
-        var ds = await _db.UserSkills.AsNoTracking()
-            .Where(s => hoSo.Keys.Contains(s.UserId))
-            .Select(s => new { s.UserId, s.SkillName, s.SkillLevel, s.Description })
-            .ToListAsync(ct);
-
-        foreach (var s in ds)
-        {
-            if (hoSo.TryGetValue(s.UserId, out var hs))
-            {
-                hs.KyNang.Add((s.SkillName, s.SkillLevel ?? 1, s.Description));
-            }
-        }
-    }
-
     /// <summary>
-    /// Đếm số nhiệm vụ đã hoàn thành và số hoàn thành đúng hạn.
-    ///
-    /// <para>
-    /// "Đúng hạn" xác định bằng thời điểm báo cáo được XÁC NHẬN so với hạn của nhiệm vụ,
-    /// chứ không phải thời điểm gửi báo cáo. Gửi kịp mà kết quả không đạt, phải làm lại
-    /// và mãi mới được duyệt thì không thể tính là đúng hạn.
-    /// </para>
+    /// Chỉ đoán phòng, nhóm và kỹ năng cho một nội dung — không chấm ai. Dùng khi tạo nhiệm vụ chưa
+    /// giao, để gắn sẵn phòng thực thi thay vì bắt người giao tự chọn.
     /// </summary>
-    private async Task NapLichSuAsync(Dictionary<long, HoSo> hoSo, CancellationToken ct)
+    public async Task<KetQuaXepHang> SuyLuanAsync(string noiDung, CancellationToken ct = default)
     {
-        var ds = await _db.Tasks.AsNoTracking()
-            .Where(t => t.AssigneeId != null
-                        && hoSo.Keys.Contains(t.AssigneeId.Value)
-                        && t.StatusCode == TrangThaiNhiemVu.HoanThanh)
-            .Select(t => new
-            {
-                UserId = t.AssigneeId!.Value,
-                t.DueDate,
-                NgayDuyet = t.Reports
-                    .Where(r => r.Status == TrangThaiBaoCao.DaXacNhan)
-                    .OrderByDescending(r => r.ReviewedAt)
-                    .Select(r => r.ReviewedAt)
-                    .FirstOrDefault()
-            })
-            .ToListAsync(ct);
-
-        foreach (var t in ds)
-        {
-            if (!hoSo.TryGetValue(t.UserId, out var hs)) continue;
-
-            hs.SoHoanThanh++;
-
-            // Không có hạn thì không thể trễ. Chưa có ngày duyệt thì không tính là đúng hạn.
-            if (t.DueDate is null ||
-                (t.NgayDuyet.HasValue && t.NgayDuyet.Value.Date <= t.DueDate.Value.Date))
-            {
-                hs.SoDungHan++;
-            }
-        }
-    }
-
-    private async Task NapKhoiLuongAsync(Dictionary<long, HoSo> hoSo, CancellationToken ct)
-    {
-        var ds = await _db.Tasks.AsNoTracking()
-            .Where(t => t.AssigneeId != null
-                        && hoSo.Keys.Contains(t.AssigneeId.Value)
-                        && TrangThaiNhiemVu.DangXuLy.Contains(t.StatusCode))
-            .Select(t => new { UserId = t.AssigneeId!.Value, t.Priority })
-            .ToListAsync(ct);
-
-        foreach (var t in ds)
-        {
-            if (!hoSo.TryGetValue(t.UserId, out var hs)) continue;
-
-            hs.SoDangLam++;
-            // Đếm theo trọng số ưu tiên: một việc HIGH nặng gấp ba một việc LOW,
-            // nên đếm đầu việc suông sẽ đánh giá sai mức bận thật sự.
-            hs.TaiHienTai += Math.Max(1, MucUuTien.TrongSo(t.Priority));
-        }
+        var dauVao = await NapDuLieuGoiY.NapAsync(
+            _db, noiDung, Array.Empty<long>(), moc: null, boQuaTaskId: null, kyNangCoSan: null, ct);
+        return await _boXepHang.ChayAsync(dauVao, chiDungTfIdf: false, ct);
     }
 
     // =====================================================================
-    // CHẤM ĐIỂM
+    // DỊCH KẾT QUẢ
     // =====================================================================
 
-    /// <summary>
-    /// Ghép hồ sơ kỹ năng thành một "văn bản" để vector hoá.
-    /// Kỹ năng mức càng cao thì lặp lại càng nhiều lần, nhờ đó TF của nó cao hơn —
-    /// đây là cách đưa mức thành thạo vào mô hình mà không phải sửa công thức TF-IDF.
-    /// </summary>
-    private static List<string> TachTuHoSo(HoSo hs)
+    private UngVienDto ChuyenDoi(KetQuaUngVien x, int thuHang)
     {
-        var cacTu = new List<string>();
+        var c = _cauHinh;
+        var d = x.Diem;
 
-        foreach (var (ten, muc, moTa) in hs.KyNang)
-        {
-            var tuKyNang = XuLyVanBan.TachTu(ten);
-            var soLan = Math.Clamp(muc, 1, 5);
-
-            for (var i = 0; i < soLan; i++) cacTu.AddRange(tuKyNang);
-
-            // Mô tả chỉ tính một lần: nó là thông tin phụ, lặp lại sẽ lấn át tên kỹ năng.
-            if (!string.IsNullOrWhiteSpace(moTa)) cacTu.AddRange(XuLyVanBan.TachTu(moTa));
-        }
-
-        return cacTu;
-    }
-
-    private UngVienDto ChamDiem(HoSo hs, TfIdf.VanBanVector vectorNhiemVu, string noiDung)
-    {
-        // --- Kỹ năng: cosine giữa nội dung nhiệm vụ và hồ sơ ---
-        var diemKyNang = TfIdf.Cosine(vectorNhiemVu, hs.Vector);
-
-        // --- Kinh nghiệm: thang log ---
-        // Dùng log để chênh lệch giữa 0 và 3 việc lớn hơn hẳn giữa 20 và 23 việc:
-        // vài việc đầu chứng minh được nhiều điều, việc thứ hai mươi thì gần như không.
-        var diemKinhNghiem = Math.Min(1.0,
-            Math.Log(1 + hs.SoHoanThanh) / Math.Log(1 + _cauHinh.NguongKinhNghiem));
-
-        // --- Đúng hạn: làm mượt Laplace ---
-        // Người mới chưa có việc nào sẽ nhận đúng giá trị tiên nghiệm thay vì 0 —
-        // nếu để 0 thì họ không bao giờ lọt vào gợi ý, và mãi mãi không có cơ hội có dữ liệu.
-        var diemDungHan =
-            (hs.SoDungHan + _cauHinh.SoQuanSatAo * _cauHinh.TyLeDungHanTienNghiem) /
-            (hs.SoHoanThanh + _cauHinh.SoQuanSatAo);
-
-        // --- Khối lượng: càng rảnh càng cao ---
-        var diemKhoiLuong = Math.Clamp(1.0 - hs.TaiHienTai / _cauHinh.NguongKhoiLuong, 0.0, 1.0);
-
-        var chiTiet = new ChiTietDiem
-        {
-            KyNang = Tao(diemKyNang, _cauHinh.TrongSoKyNang),
-            KinhNghiem = Tao(diemKinhNghiem, _cauHinh.TrongSoKinhNghiem),
-            DungHan = Tao(diemDungHan, _cauHinh.TrongSoDungHan),
-            KhoiLuong = Tao(diemKhoiLuong, _cauHinh.TrongSoKhoiLuong)
-        };
-
-        // Điểm tổng cộng từ chính các phần đóng góp đã làm tròn, để tổng bốn dòng hiển thị
-        // luôn khớp con số tổng. Cộng từ giá trị thô rồi mới làm tròn thì hai bên có thể lệch
-        // ở chữ số cuối, và người xem sẽ nghi ngờ toàn bộ kết quả.
-        var tong = chiTiet.KyNang.DongGop + chiTiet.KinhNghiem.DongGop
-                 + chiTiet.DungHan.DongGop + chiTiet.KhoiLuong.DongGop;
-
-        var kyNangKhop = TimKyNangKhop(hs, noiDung);
+        var khop = x.DoiChieuKyNang.Where(k => k.MucCo.HasValue)
+            .Select(k => $"{k.KyNang.Ten} {k.MucCo}/5" + (k.KyNang.Muc is { } can ? $" (cần {can})" : string.Empty))
+            .ToList();
+        var thieu = x.DoiChieuKyNang.Where(k => !k.MucCo.HasValue).Select(k => k.KyNang.Ten).ToList();
 
         return new UngVienDto
         {
-            UserId = hs.UserId,
-            FullName = hs.FullName,
-            Diem = Math.Round(tong, 4),
-            ChiTietDiem = chiTiet,
+            UserId = x.HoSo.UserId,
+            FullName = x.HoSo.FullName,
+            ChucDanh = x.HoSo.ChucDanh,
+            TenPhongBan = x.HoSo.TenPhong,
+            TenNhom = x.HoSo.TenNhom,
+            Diem = x.Tong,
+            ThuHang = thuHang,
+            ChiTietDiem = new ChiTietDiem
+            {
+                NguNghia = ThanhPhan(d.NguNghia, c.TrongSoNguNghia),
+                MucKyNang = ThanhPhan(d.MucKyNang, c.TrongSoMucKyNang),
+                HieuSuat = ThanhPhan(d.HieuSuat, c.TrongSoHieuSuat),
+                ViecTuongTu = ThanhPhan(d.ViecTuongTu, c.TrongSoViecTuongTu),
+                DungHan = ThanhPhan(d.DungHan, c.TrongSoDungHan),
+                KhoiLuong = ThanhPhan(d.KhoiLuong, c.TrongSoKhoiLuong)
+            },
             SoLieu = new SoLieuUngVien
             {
-                SoNhiemVuHoanThanh = hs.SoHoanThanh,
-                SoNhiemVuDungHan = hs.SoDungHan,
-                SoNhiemVuDangLam = hs.SoDangLam,
-                TaiHienTai = hs.TaiHienTai,
-                KyNangKhop = kyNangKhop.Select(k => $"{k.Ten} ({k.Muc}/5)").ToList()
+                SoNhiemVuHoanThanh = x.SoHoanThanh,
+                SoNhiemVuDungHan = x.SoDungHan,
+                SoNhiemVuDangLam = x.HoSo.SoDangLam,
+                TaiHienTai = x.HoSo.TaiHienTai,
+                ChatLuongTrungBinh = x.ChatLuongTrungBinh is { } cl ? Math.Round(cl, 2) : null,
+                ChuaCoLichSu = x.SoHoanThanh == 0,
+                KyNangKhop = khop,
+                KyNangThieu = thieu,
+                ViecTuongTu = x.ViecGanNhat.Select(v => new ViecTuongTuDto
+                {
+                    TaskId = v.Viec.TaskId,
+                    TieuDe = v.Viec.TieuDe,
+                    DoGan = Math.Round(v.DoGan, 4),
+                    ChatLuong = v.Viec.ChatLuong
+                }).ToList()
             },
-            LyDo = SinhLyDo(hs, chiTiet, kyNangKhop)
+            LyDo = SinhLyDo(x, khop, thieu)
         };
     }
 
-    private static ThanhPhanDiem Tao(double diem, double trongSo) => new()
+    private static ThanhPhanDiem ThanhPhan(double diem, double trongSo) => new()
     {
         Diem = Math.Round(diem, 4),
         TrongSo = trongSo,
-        DongGop = Math.Round(diem * trongSo, 4)
+        DongGop = BoXepHang.DongGop(diem, trongSo)
     };
 
-    /// <summary>
-    /// Tìm những kỹ năng của ứng viên thực sự xuất hiện trong nội dung nhiệm vụ.
-    /// Dùng để viết lý do cụ thể thay vì nói chung chung "phù hợp về kỹ năng".
-    /// </summary>
-    private static List<(string Ten, int Muc)> TimKyNangKhop(HoSo hs, string noiDung)
+    private static SuyLuanPhongBanDto ChuyenDoi(KetQuaSuyLuan s)
     {
-        var tuNhiemVu = XuLyVanBan.TachTu(noiDung).ToHashSet(StringComparer.Ordinal);
+        static DiemDonViDto DonVi(DiemDonVi x) => new()
+        {
+            Id = x.DonVi.Id,
+            Ten = x.DonVi.Ten,
+            Diem = Math.Round(x.Diem, 4),
+            DiemHoSo = Math.Round(x.DiemHoSo, 4),
+            DiemLichSu = x.DiemLichSu is { } ls ? Math.Round(ls, 4) : null
+        };
 
-        return hs.KyNang
-            .Where(k => XuLyVanBan.TachTu(k.Ten).Any(t => tuNhiemVu.Contains(t)))
-            .OrderByDescending(k => k.Muc)
-            .Select(k => (k.Ten, k.Muc))
-            .ToList();
+        var (ma, moTa) = s.KetLuan switch
+        {
+            KetLuanPhongBan.ChacChan => ("CHAC_CHAN", $"Nhiệm vụ thuộc {s.CacPhong[0].DonVi.Ten}."),
+            KetLuanPhongBan.LuongLu => ("LUONG_LU",
+                $"Nhiệm vụ có thể thuộc {s.CacPhong[0].DonVi.Ten} hoặc {s.CacPhong[1].DonVi.Ten}."),
+            _ => ("KHONG_RO", "Không xác định được nhiệm vụ thuộc phòng nào.")
+        };
+
+        return new SuyLuanPhongBanDto
+        {
+            KetLuan = ma,
+            MoTa = moTa,
+            CacPhong = s.CacPhong.Select(DonVi).ToList(),
+            PhongDaChon = s.PhongDaChon,
+            Nhom = s.Nhom is null ? null : DonVi(s.Nhom)
+        };
     }
 
     /// <summary>
-    /// Sinh lý do bằng tiếng Việt theo mẫu cố định.
+    /// Sinh lý do theo mẫu câu cố định.
     ///
     /// <para>
-    /// Cố tình không dùng mô hình ngôn ngữ: mẫu cố định thì kết quả ổn định, tái lập được
-    /// khi bảo vệ, không tốn chi phí gọi API và không bao giờ bịa ra số liệu không có thật.
+    /// Cố tình không dùng mô hình ngôn ngữ: mẫu cố định thì kết quả ổn định, tái lập được khi bảo
+    /// vệ, không tốn chi phí và không bao giờ bịa ra số liệu không có thật.
     /// </para>
     /// </summary>
-    private List<string> SinhLyDo(HoSo hs, ChiTietDiem ct, List<(string Ten, int Muc)> kyNangKhop)
+    private List<string> SinhLyDo(KetQuaUngVien x, List<string> khop, List<string> thieu)
     {
         var lyDo = new List<string>();
+        var d = x.Diem;
 
-        if (kyNangKhop.Count > 0)
+        lyDo.Add(d.NguNghia switch
         {
-            var ds = string.Join(", ", kyNangKhop.Take(3).Select(k => $"{k.Ten} ({k.Muc}/5)"));
-            lyDo.Add($"Khớp kỹ năng: {ds}.");
+            >= 0.7 => $"Hồ sơ rất sát với nội dung nhiệm vụ (độ khớp {d.NguNghia:0.00}).",
+            >= 0.4 => $"Hồ sơ khá phù hợp với nội dung nhiệm vụ (độ khớp {d.NguNghia:0.00}).",
+            _ => $"Hồ sơ ít liên quan tới nội dung nhiệm vụ (độ khớp {d.NguNghia:0.00})."
+        });
+
+        if (khop.Count > 0) lyDo.Add($"Có kỹ năng: {string.Join(", ", khop.Take(3))}.");
+        if (thieu.Count > 0) lyDo.Add($"Chưa có kỹ năng: {string.Join(", ", thieu.Take(3))}.");
+
+        if (x.ViecGanNhat.Count > 0 && x.ViecGanNhat[0].DoGan >= 0.5)
+        {
+            var viec = x.ViecGanNhat[0].Viec;
+            lyDo.Add($"Từng làm việc tương tự: \"{viec.TieuDe}\"" +
+                     (viec.ChatLuong is { } q ? $", được chấm {q}/5." : "."));
         }
-        else if (ct.KyNang.Diem >= _cauHinh.NguongKhopKyNang)
+
+        if (x.SoHoanThanh == 0)
         {
-            // Không có kỹ năng nào trùng tên trực tiếp nhưng cosine vẫn đủ cao — thường là
-            // khớp qua phần mô tả kỹ năng.
-            lyDo.Add("Hồ sơ kỹ năng có liên quan tới nội dung nhiệm vụ.");
+            lyDo.Add("Chưa hoàn thành việc nào — hiệu suất và đúng hạn đang dùng giá trị mặc định trung tính.");
         }
         else
         {
-            // Điểm cosine khác 0 nhưng dưới ngưỡng thì chỉ là trùng từ vụn, không phải
-            // liên quan chuyên môn. Nói "có liên quan một phần" ở đây là gây hiểu nhầm.
-            lyDo.Add("Chưa khai kỹ năng nào khớp với nội dung nhiệm vụ này.");
+            var tyLe = (int)Math.Round(100.0 * x.SoDungHan / x.SoHoanThanh);
+            lyDo.Add($"Đã hoàn thành {x.SoHoanThanh} việc, đúng hạn {tyLe}%" +
+                     (x.ChatLuongTrungBinh is { } cl ? $", chất lượng trung bình {cl:0.0}/5." : "."));
         }
 
-        lyDo.Add(hs.SoHoanThanh == 0
-            ? "Chưa hoàn thành nhiệm vụ nào — chưa có dữ liệu lịch sử để đánh giá."
-            : $"Đã hoàn thành {hs.SoHoanThanh} nhiệm vụ.");
-
-        if (hs.SoHoanThanh > 0)
-        {
-            var tyLe = (int)Math.Round(100.0 * hs.SoDungHan / hs.SoHoanThanh);
-            lyDo.Add($"Tỷ lệ đúng hạn {tyLe}% ({hs.SoDungHan}/{hs.SoHoanThanh}).");
-        }
-
-        lyDo.Add(hs.SoDangLam == 0
-            ? "Hiện không giữ nhiệm vụ nào, có thể nhận việc ngay."
-            : $"Đang giữ {hs.SoDangLam} nhiệm vụ " +
-              $"(tải {hs.TaiHienTai:0.#}/{_cauHinh.NguongKhoiLuong:0.#}).");
+        lyDo.Add(x.HoSo.SoDangLam == 0
+            ? "Hiện không giữ việc nào, nhận được ngay."
+            : $"Đang giữ {x.HoSo.SoDangLam} việc (tải {x.HoSo.TaiHienTai:0.#}/{_cauHinh.NguongKhoiLuong:0.#})" +
+              (d.KhoiLuong <= 0 ? " — đã đầy tải." : "."));
 
         return lyDo;
+    }
+
+    private static List<string> SinhCanhBao(KetQuaXepHang kq)
+    {
+        var canhBao = new List<string>();
+        var s = kq.SuyLuan;
+
+        if (kq.DaLuiVeTfIdf)
+        {
+            canhBao.Add("Dịch vụ AI nhúng ngữ nghĩa không phản hồi — đang dùng TF-IDF làm phương án dự phòng, " +
+                        "kết quả kém chính xác hơn. Kiểm tra dịch vụ ở thư mục BackEnd/ai.");
+        }
+
+        if (s.KetLuan == KetLuanPhongBan.KhongRo && s.CacPhong.Count > 0)
+        {
+            canhBao.Add($"Không xác định được nhiệm vụ thuộc phòng nào (khớp nhất là {s.CacPhong[0].DonVi.Ten} " +
+                        $"nhưng chỉ đạt {s.CacPhong[0].Diem:0.00}). Đang xét mọi người trong phạm vi của bạn.");
+        }
+        else if (s.KetLuan == KetLuanPhongBan.LuongLu)
+        {
+            canhBao.Add($"Nhiệm vụ có thể thuộc {s.CacPhong[0].DonVi.Ten} hoặc {s.CacPhong[1].DonVi.Ten} — " +
+                        "đang xét ứng viên của cả hai phòng.");
+        }
+
+        if (kq.PhongNgoaiPhamVi)
+        {
+            canhBao.Add($"AI đoán nhiệm vụ thuộc {s.CacPhong[0].DonVi.Ten}, nhưng trong phạm vi giao việc của bạn " +
+                        "không có ai ở phòng đó. Đang xét toàn bộ người bạn giao được — nên cân nhắc chuyển " +
+                        "nhiệm vụ cho phòng phù hợp.");
+        }
+
+        if (kq.UngVien.Count > 0)
+        {
+            var khongAiCo = s.KyNang
+                .Where(k => kq.UngVien.All(u => !u.HoSo.MucKyNang.ContainsKey(k.SkillId)))
+                .Select(k => k.Ten)
+                .ToList();
+            if (khongAiCo.Count > 0)
+                canhBao.Add($"Không ai trong danh sách có kỹ năng: {string.Join(", ", khongAiCo)}.");
+
+            if (kq.UngVien.Max(u => u.Diem.NguNghia) < 0.2)
+            {
+                canhBao.Add("Không ai có hồ sơ khớp rõ với nội dung nhiệm vụ. Thứ hạng dưới đây chủ yếu dựa trên " +
+                            "hiệu suất và khối lượng việc, không phải chuyên môn.");
+            }
+        }
+
+        return canhBao;
     }
 }
