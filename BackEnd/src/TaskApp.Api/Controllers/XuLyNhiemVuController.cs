@@ -48,8 +48,7 @@ public sealed class XuLyNhiemVuController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<TienDoDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> LichSuTienDo(long taskId, CancellationToken ct)
     {
-        var kq = await _service.LichSuTienDoAsync(
-            taskId, _hienTai.LayUserIdBatBuoc(), _hienTai.VaiTroHienTai ?? string.Empty, ct);
+        var kq = await _service.LichSuTienDoAsync(taskId, _hienTai.LayUserIdBatBuoc(), ct);
         return TraVe(kq);
     }
 
@@ -72,14 +71,14 @@ public sealed class XuLyNhiemVuController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<BaoCaoDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DanhSachBaoCao(long taskId, CancellationToken ct)
     {
-        var kq = await _service.DanhSachBaoCaoAsync(
-            taskId, _hienTai.LayUserIdBatBuoc(), _hienTai.VaiTroHienTai ?? string.Empty, ct);
+        var kq = await _service.DanhSachBaoCaoAsync(taskId, _hienTai.LayUserIdBatBuoc(), ct);
         return TraVe(kq);
     }
 
     /// <summary>
     /// Duyệt một báo cáo. Chỉ người giao nhiệm vụ.
     /// Xác nhận thì nhiệm vụ "Hoàn thành"; từ chối thì chuyển "Yêu cầu bổ sung" và bắt buộc nêu lý do.
+    /// Kèm điểm chất lượng và mức hoàn thành (1..5) — dữ liệu này nuôi phần AI chấm hiệu suất.
     /// </summary>
     [HttpPost("api/bao-cao/{baoCaoId:long}/duyet")]
     [Authorize(Roles = VaiTro.NhomGiaoViec)]

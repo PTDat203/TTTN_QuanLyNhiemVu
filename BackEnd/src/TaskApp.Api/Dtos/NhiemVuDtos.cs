@@ -55,6 +55,14 @@ public class NhiemVuTomTatDto
     public long? AssigneeId { get; set; }
     public string? TenNguoiThucHien { get; set; }
 
+    /// <summary>Phòng thực thi. Rỗng khi nhiệm vụ chưa giao và chưa được gắn phòng.</summary>
+    public long? DepartmentId { get; set; }
+    public string? TenPhongBan { get; set; }
+
+    /// <summary>Nhóm phụ trách. Rỗng với phòng không chia nhóm.</summary>
+    public long? TeamId { get; set; }
+    public string? TenNhom { get; set; }
+
     public DateTime? StartDate { get; set; }
     public DateTime? DueDate { get; set; }
 
@@ -110,6 +118,12 @@ public sealed class BaoCaoDto
     public long? ReviewerId { get; set; }
     public string? TenNguoiDuyet { get; set; }
     public string? ReviewNote { get; set; }
+
+    /// <summary>Chất lượng kết quả, thang 1..5. Rỗng khi chưa duyệt.</summary>
+    public int? QualityScore { get; set; }
+
+    /// <summary>Mức đáp ứng đủ yêu cầu, thang 1..5. Rỗng khi chưa duyệt.</summary>
+    public int? CompletionScore { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
 }

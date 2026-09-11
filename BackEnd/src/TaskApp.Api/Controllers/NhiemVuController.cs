@@ -32,15 +32,15 @@ public sealed class NhiemVuController : ControllerBase
 
     /// <summary>Danh sách nhiệm vụ có lọc, sắp xếp và phân trang.</summary>
     /// <remarks>
-    /// MANAGER thấy nhiệm vụ mình tạo, EMPLOYEE thấy nhiệm vụ được giao cho mình.
-    /// Giới hạn này áp ngay trong truy vấn SQL.
+    /// Ai cũng thấy việc mình tạo và việc giao cho mình. Trưởng nhóm thấy thêm việc của
+    /// nhóm, trưởng phòng thấy việc của phòng, Giám đốc thấy tất cả. Giới hạn này áp ngay
+    /// trong truy vấn SQL.
     /// </remarks>
     [HttpGet]
     [ProducesResponseType(typeof(KetQuaPhanTrang<NhiemVuTomTatDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DanhSach([FromQuery] NhiemVuLocRequest loc, CancellationToken ct)
     {
-        var kq = await _service.DanhSachAsync(
-            loc, _hienTai.LayUserIdBatBuoc(), _hienTai.VaiTroHienTai ?? string.Empty, ct);
+        var kq = await _service.DanhSachAsync(loc, _hienTai.LayUserIdBatBuoc(), ct);
         return Ok(kq);
     }
 
@@ -50,8 +50,7 @@ public sealed class NhiemVuController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChiTiet(long id, CancellationToken ct)
     {
-        var kq = await _service.ChiTietAsync(
-            id, _hienTai.LayUserIdBatBuoc(), _hienTai.VaiTroHienTai ?? string.Empty, ct);
+        var kq = await _service.ChiTietAsync(id, _hienTai.LayUserIdBatBuoc(), ct);
         return TraVe(kq);
     }
 
@@ -96,7 +95,7 @@ public sealed class NhiemVuController : ControllerBase
     }
 
     /// <summary>Giao nhiệm vụ cho một người thực hiện. Chỉ MANAGER.</summary>
-    /// <remarks>Người nhận phải là EMPLOYEE đang hoạt động.</remarks>
+    /// <remarks>Người nhận phải đang hoạt động, ở cấp dưới và trong phạm vi của người giao.</remarks>
     [HttpPost("{id:long}/giao")]
     [Authorize(Roles = VaiTro.NhomGiaoViec)]
     [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]

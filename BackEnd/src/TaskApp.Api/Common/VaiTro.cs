@@ -4,10 +4,12 @@ namespace TaskApp.Api.Common;
 /// Bốn cấp trong cơ cấu tổ chức, tương ứng cột <c>USERS.USER_ROLE</c>.
 ///
 /// <para>
-/// Vai trò trả lời câu hỏi "người này ở cấp nào", còn <c>DEPARTMENT_ID</c> trả lời
-/// "thuộc phòng nào" và <c>MANAGER_ID</c> trả lời "ai quản". Ba thứ này độc lập nhau:
-/// một TEAM_LEAD phòng Phát triển và một TEAM_LEAD phòng Nhân sự cùng cấp nhưng
-/// phạm vi quản lý hoàn toàn khác.
+/// Vai trò trả lời câu hỏi "người này ở cấp nào", còn <c>DEPARTMENT_ID</c> và
+/// <c>TEAM_ID</c> trả lời "thuộc đâu". Hai thứ độc lập nhau: hai trưởng nhóm ở hai nhóm
+/// khác nhau cùng cấp nhưng phạm vi quản lý không giao nhau.
+/// </para>
+/// <para>
+/// Đây là QUYỀN TRONG HỆ THỐNG, khác với chức danh (<c>JOB_TITLE</c>) chỉ để hiển thị.
 /// </para>
 /// </summary>
 public static class VaiTro
@@ -45,16 +47,21 @@ public static class VaiTro
         => vaiTro is GiamDoc or TruongPhong or TruongNhom;
 
     /// <summary>
-    /// Có được nhận nhiệm vụ không.
+    /// Các vai trò THẤP HƠN vai trò đã cho — tức những cấp mà người này được giao việc cho.
     ///
     /// <para>
-    /// Trưởng nhóm CÓ nhận việc: trong một nhóm phát triển, trưởng nhóm vẫn trực tiếp
-    /// làm chứ không chỉ điều phối. Giám đốc và trưởng phòng thì không — họ giao việc.
-    /// Đây cũng là tập ứng viên mà AI xét khi gợi ý.
+    /// Quy tắc là "cấp trên giao cho cấp dưới", không phải một danh sách cố định ai được
+    /// nhận việc. Trưởng phòng vừa nhận việc từ Giám đốc vừa giao cho trưởng nhóm; trưởng
+    /// nhóm vừa nhận từ trưởng phòng vừa giao cho nhân viên. Chỉ Giám đốc không nhận việc
+    /// của ai, và chỉ nhân viên không giao việc cho ai.
+    /// </para>
+    /// <para>
+    /// Đây mới là quy tắc về CẤP. Quy tắc về PHẠM VI (cùng phòng, cùng nhóm) nằm ở
+    /// <c>Services.PhamViToChuc</c>.
     /// </para>
     /// </summary>
-    public static bool CoTheNhanViec(string? vaiTro)
-        => vaiTro is TruongNhom or NhanVien;
+    public static string[] CacCapDuoi(string? vaiTro)
+        => TatCa.Where(v => Bac(v) > Bac(vaiTro)).ToArray();
 
     /// <summary>Giám đốc thấy và giao được việc ở mọi phòng, không giới hạn phạm vi.</summary>
     public static bool ThayToanCongTy(string? vaiTro) => vaiTro == GiamDoc;

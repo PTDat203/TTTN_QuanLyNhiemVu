@@ -34,14 +34,8 @@ public sealed class NguoiDungHienTai
 
     public string? FullName => Principal?.FindFirst(TenClaim.FullName)?.Value;
 
-    /// <summary>Vai trò: MANAGER hoặc EMPLOYEE.</summary>
+    /// <summary>Vai trò hệ thống, xem <see cref="VaiTro"/>.</summary>
     public string? VaiTroHienTai => Principal?.FindFirst(ClaimTypes.Role)?.Value;
-
-    /// <summary>Là người giao nhiệm vụ.</summary>
-    public bool LaManager => VaiTro.LaCapQuanLy(VaiTroHienTai);
-
-    /// <summary>Là người thực hiện nhiệm vụ.</summary>
-    public bool LaEmployee => VaiTro.CoTheNhanViec(VaiTroHienTai);
 
     /// <summary>
     /// Lấy id người dùng, ném lỗi nếu chưa đăng nhập.

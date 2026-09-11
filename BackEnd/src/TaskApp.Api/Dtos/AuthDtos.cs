@@ -37,14 +37,23 @@ public sealed class NguoiDungDto
     public string FullName { get; set; } = string.Empty;
     public string? Email { get; set; }
 
-    /// <summary>MANAGER (người giao) hoặc EMPLOYEE (người thực hiện). Cột USER_ROLE.</summary>
+    /// <summary>Vai trò hệ thống: DIRECTOR, DEPT_HEAD, TEAM_LEAD, EMPLOYEE. Cột USER_ROLE.</summary>
     public string Role { get; set; } = string.Empty;
 
-    /// <summary>Tên vai trò để hiển thị, ví dụ "Người giao nhiệm vụ".</summary>
+    /// <summary>Tên vai trò để hiển thị, ví dụ "Trưởng nhóm".</summary>
     public string TenVaiTro { get; set; } = string.Empty;
 
     /// <summary>ACTIVE hoặc INACTIVE. Cột USER_STATUS.</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>Chức danh trong tổ chức, ví dụ "Lập trình viên Backend". Chỉ để hiển thị.</summary>
+    public string? JobTitle { get; set; }
+
+    public long? DepartmentId { get; set; }
+    public string? TenPhongBan { get; set; }
+
+    public long? TeamId { get; set; }
+    public string? TenNhom { get; set; }
 }
 
 /// <summary>Kết quả đăng nhập hoặc làm mới token.</summary>

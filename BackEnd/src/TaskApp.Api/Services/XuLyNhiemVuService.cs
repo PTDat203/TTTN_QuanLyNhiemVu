@@ -115,13 +115,13 @@ public sealed class XuLyNhiemVuService
 
     /// <summary>Lịch sử tiến độ của một nhiệm vụ, mới nhất lên đầu.</summary>
     public async Task<KetQua<IReadOnlyList<TienDoDto>>> LichSuTienDoAsync(
-        long taskId, long userId, string vaiTro, CancellationToken ct = default)
+        long taskId, long userId, CancellationToken ct = default)
     {
-        var nv = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == taskId, ct);
-        if (nv is null)
+        var (tonTai, duocXem) = await PhamViToChuc.QuyenXemAsync(_db, taskId, userId, ct);
+        if (!tonTai)
             return KetQua<IReadOnlyList<TienDoDto>>.KhongTimThay($"Không tìm thấy nhiệm vụ #{taskId}.");
 
-        if (!DuocXem(nv, userId, vaiTro))
+        if (!duocXem)
             return KetQua<IReadOnlyList<TienDoDto>>.KhongCoQuyen("Bạn không có quyền xem nhiệm vụ này.");
 
         var ds = await _db.TaskProgresses.AsNoTracking()
@@ -245,6 +245,14 @@ public sealed class XuLyNhiemVuService
                 "Phải nêu lý do khi từ chối báo cáo, để người thực hiện biết cần bổ sung gì.");
         }
 
+        // Trùng ràng buộc CK_TASK_REPORTS_QUALITY / COMPLETION. Kiểm ở đây để trả thông
+        // báo tiếng Việt thay vì ORA-02290.
+        if (yeuCau.QualityScore is < 1 or > 5 || yeuCau.CompletionScore is < 1 or > 5)
+        {
+            return KetQua<BaoCaoDto>.DuLieuKhongHopLe(
+                "Điểm chất lượng và mức hoàn thành chấm theo thang 1 đến 5.");
+        }
+
         var trangThaiMoi = yeuCau.XacNhan
             ? TrangThaiNhiemVu.HoanThanh
             : TrangThaiNhiemVu.YeuCauBoSung;
@@ -261,6 +269,8 @@ public sealed class XuLyNhiemVuService
         baoCao.ReviewerId = userId;
         baoCao.ReviewNote = yeuCau.ReviewNote?.Trim();
         baoCao.ReviewedAt = DateTime.Now;
+        baoCao.QualityScore = yeuCau.QualityScore;
+        baoCao.CompletionScore = yeuCau.CompletionScore;
 
         nv.StatusCode = trangThaiMoi;
 
@@ -281,13 +291,13 @@ public sealed class XuLyNhiemVuService
 
     /// <summary>Danh sách báo cáo của một nhiệm vụ, mới nhất lên đầu.</summary>
     public async Task<KetQua<IReadOnlyList<BaoCaoDto>>> DanhSachBaoCaoAsync(
-        long taskId, long userId, string vaiTro, CancellationToken ct = default)
+        long taskId, long userId, CancellationToken ct = default)
     {
-        var nv = await _db.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == taskId, ct);
-        if (nv is null)
+        var (tonTai, duocXem) = await PhamViToChuc.QuyenXemAsync(_db, taskId, userId, ct);
+        if (!tonTai)
             return KetQua<IReadOnlyList<BaoCaoDto>>.KhongTimThay($"Không tìm thấy nhiệm vụ #{taskId}.");
 
-        if (!DuocXem(nv, userId, vaiTro))
+        if (!duocXem)
             return KetQua<IReadOnlyList<BaoCaoDto>>.KhongCoQuyen("Bạn không có quyền xem nhiệm vụ này.");
 
         var ds = await _db.TaskReports.AsNoTracking()
@@ -304,6 +314,8 @@ public sealed class XuLyNhiemVuService
                 ReviewerId = r.ReviewerId,
                 TenNguoiDuyet = r.Reviewer != null ? r.Reviewer.FullName : null,
                 ReviewNote = r.ReviewNote,
+                QualityScore = r.QualityScore,
+                CompletionScore = r.CompletionScore,
                 CreatedAt = r.CreatedAt,
                 ReviewedAt = r.ReviewedAt
             })
@@ -337,9 +349,6 @@ public sealed class XuLyNhiemVuService
     }
 
     // =====================================================================
-    private static bool DuocXem(TaskItem nv, long userId, string vaiTro)
-        => nv.CreatorId == userId || nv.AssigneeId == userId || VaiTro.LaCapQuanLy(vaiTro);
-
     private static BaoCaoDto ChuyenDoi(TaskReport r, string? tenNguoiBaoCao, string? tenNguoiDuyet) => new()
     {
         Id = r.Id,
@@ -351,6 +360,8 @@ public sealed class XuLyNhiemVuService
         ReviewerId = r.ReviewerId,
         TenNguoiDuyet = tenNguoiDuyet,
         ReviewNote = r.ReviewNote,
+        QualityScore = r.QualityScore,
+        CompletionScore = r.CompletionScore,
         CreatedAt = r.CreatedAt,
         ReviewedAt = r.ReviewedAt
     };

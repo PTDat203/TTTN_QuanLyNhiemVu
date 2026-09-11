@@ -31,4 +31,13 @@ public sealed class DuyetBaoCaoRequest
     /// phải sửa gì, từ chối mà không nói lý do thì họ không có căn cứ làm lại.
     /// </summary>
     public string? ReviewNote { get; set; }
+
+    /// <summary>
+    /// Chất lượng kết quả, thang 1..5. Không bắt buộc, nhưng đây là dữ liệu phần AI dùng để
+    /// chấm hiệu suất lịch sử — bỏ trống thì nhiệm vụ này không góp vào điểm đó.
+    /// </summary>
+    public int? QualityScore { get; set; }
+
+    /// <summary>Mức đáp ứng đủ yêu cầu, thang 1..5. Không bắt buộc.</summary>
+    public int? CompletionScore { get; set; }
 }

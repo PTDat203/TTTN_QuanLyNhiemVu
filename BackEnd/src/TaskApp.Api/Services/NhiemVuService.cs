@@ -38,25 +38,22 @@ public sealed class NhiemVuService
     /// Danh sách nhiệm vụ có lọc, sắp xếp và phân trang.
     ///
     /// <para>
-    /// <b>Giới hạn theo vai trò áp ngay trong truy vấn, không lọc sau khi lấy về:</b>
-    /// EMPLOYEE chỉ thấy nhiệm vụ giao cho mình, MANAGER chỉ thấy nhiệm vụ mình tạo.
-    /// Lọc ở tầng SQL thì dữ liệu người khác không bao giờ rời khỏi database.
+    /// <b>Phạm vi áp ngay trong truy vấn, không lọc sau khi lấy về:</b> ai cũng thấy việc
+    /// mình tạo và việc giao cho mình; trưởng nhóm thấy thêm việc của nhóm, trưởng phòng
+    /// thấy việc của phòng, Giám đốc thấy tất cả. Quy tắc nằm ở <see cref="PhamViToChuc"/>.
+    /// Lọc ở tầng SQL thì dữ liệu ngoài phạm vi không bao giờ rời khỏi database.
     /// </para>
     /// </summary>
     public async Task<KetQuaPhanTrang<NhiemVuTomTatDto>> DanhSachAsync(
-        NhiemVuLocRequest loc, long userId, string vaiTro, CancellationToken ct = default)
+        NhiemVuLocRequest loc, long userId, CancellationToken ct = default)
     {
-        var truyVan = _db.Tasks.AsNoTracking().AsQueryable();
+        var viTri = await PhamViToChuc.NapAsync(_db, userId, ct);
+        if (viTri is null)
+        {
+            return KetQuaPhanTrang<NhiemVuTomTatDto>.Rong(loc.Trang, loc.KichThuocTrang);
+        }
 
-        // --- Giới hạn phạm vi theo vai trò ---
-        if (VaiTro.CoTheNhanViec(vaiTro) && !VaiTro.LaCapQuanLy(vaiTro))
-        {
-            truyVan = truyVan.Where(t => t.AssigneeId == userId);
-        }
-        else if (VaiTro.LaCapQuanLy(vaiTro))
-        {
-            truyVan = truyVan.Where(t => t.CreatorId == userId);
-        }
+        var truyVan = _db.Tasks.AsNoTracking().ThayDuoc(viTri);
 
         // --- Bộ lọc ---
         if (!string.IsNullOrWhiteSpace(loc.StatusCode))
@@ -115,6 +112,8 @@ public sealed class NhiemVuService
                 NhiemVu = t,
                 TenNguoiTao = t.Creator!.FullName,
                 TenNguoiThucHien = t.Assignee != null ? t.Assignee.FullName : null,
+                TenPhongBan = t.Department != null ? t.Department.Name : null,
+                TenNhom = t.Team != null ? t.Team.Name : null,
                 // Lấy phần trăm của bản ghi tiến độ mới nhất. Làm trong cùng một truy vấn
                 // để tránh N+1: nếu lấy riêng cho từng dòng thì 20 nhiệm vụ = 21 lần gọi DB.
                 TienDo = t.ProgressUpdates
@@ -125,31 +124,46 @@ public sealed class NhiemVuService
             .ToListAsync(ct);
 
         var danhSach = dsThucThe
-            .Select(x => ChuyenDoiTomTat(x.NhiemVu, x.TenNguoiTao, x.TenNguoiThucHien, x.TienDo))
+            .Select(x => ChuyenDoiTomTat(
+                x.NhiemVu, x.TenNguoiTao, x.TenNguoiThucHien, x.TenPhongBan, x.TenNhom, x.TienDo))
             .ToList();
 
         // Thu tu tham so: (danhSach, trangHienTai, kichThuocTrang, tongSoDong)
         return KetQuaPhanTrang<NhiemVuTomTatDto>.Tao(danhSach, trang, kichThuoc, tongSo);
     }
 
-    /// <summary>Chi tiết một nhiệm vụ kèm lịch sử tiến độ, báo cáo và tệp đính kèm.</summary>
+    /// <summary>
+    /// Chi tiết một nhiệm vụ kèm lịch sử tiến độ, báo cáo và tệp đính kèm.
+    /// Chỉ trả về khi nhiệm vụ nằm trong phạm vi được xem của người gọi.
+    /// </summary>
     public async Task<KetQua<NhiemVuChiTietDto>> ChiTietAsync(
-        long id, long userId, string vaiTro, CancellationToken ct = default)
+        long id, long userId, CancellationToken ct = default)
+    {
+        var (tonTai, duocXem) = await PhamViToChuc.QuyenXemAsync(_db, id, userId, ct);
+        if (!tonTai)
+            return KetQua<NhiemVuChiTietDto>.KhongTimThay($"Không tìm thấy nhiệm vụ #{id}.");
+        if (!duocXem)
+            return KetQua<NhiemVuChiTietDto>.KhongCoQuyen("Bạn không có quyền xem nhiệm vụ này.");
+
+        return await DocChiTietAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Đọc chi tiết mà KHÔNG kiểm quyền xem. Chỉ gọi khi quyền đã được kiểm theo cách
+    /// khác — ví dụ ngay sau khi người tạo vừa sửa hay vừa giao nhiệm vụ của chính họ.
+    /// </summary>
+    private async Task<KetQua<NhiemVuChiTietDto>> DocChiTietAsync(long id, CancellationToken ct)
     {
         var nv = await _db.Tasks.AsNoTracking()
             .Include(t => t.Creator)
             .Include(t => t.Assignee)
+            .Include(t => t.Department)
+            .Include(t => t.Team)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         if (nv is null)
         {
             return KetQua<NhiemVuChiTietDto>.KhongTimThay($"Không tìm thấy nhiệm vụ #{id}.");
-        }
-
-        if (!DuocXem(nv, userId, vaiTro))
-        {
-            return KetQua<NhiemVuChiTietDto>.KhongCoQuyen(
-                "Bạn không có quyền xem nhiệm vụ này.");
         }
 
         var tienDo = await _db.TaskProgresses.AsNoTracking()
@@ -180,6 +194,8 @@ public sealed class NhiemVuService
                 ReviewerId = r.ReviewerId,
                 TenNguoiDuyet = r.Reviewer != null ? r.Reviewer.FullName : null,
                 ReviewNote = r.ReviewNote,
+                QualityScore = r.QualityScore,
+                CompletionScore = r.CompletionScore,
                 CreatedAt = r.CreatedAt,
                 ReviewedAt = r.ReviewedAt
             })
@@ -210,7 +226,7 @@ public sealed class NhiemVuService
     // =====================================================================
 
     /// <summary>
-    /// Tạo nhiệm vụ. Chỉ MANAGER. Trạng thái khởi tạo do server đặt, client không gửi lên được.
+    /// Tạo nhiệm vụ. Chỉ cấp quản lý. Trạng thái khởi tạo do server đặt, client không gửi lên được.
     /// Có <c>AssigneeId</c> thì tạo thẳng ở DA_GIAO, không thì ở MOI_TAO.
     /// </summary>
     public async Task<KetQua<NhiemVuChiTietDto>> TaoAsync(
@@ -233,10 +249,11 @@ public sealed class NhiemVuService
         // Giao luôn khi tạo: kiểm người nhận rồi nhảy thẳng sang DA_GIAO.
         if (yeuCau.AssigneeId.HasValue)
         {
-            var kiemTra = await KiemTraNguoiThucHienAsync(yeuCau.AssigneeId.Value, ct);
-            if (kiemTra is not null) return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(kiemTra);
+            var (nguoiNhan, loiGiao) =
+                await PhamViToChuc.KiemTraGiaoAsync(_db, creatorId, yeuCau.AssigneeId.Value, ct);
+            if (nguoiNhan is null) return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(loiGiao!);
 
-            nv.AssigneeId = yeuCau.AssigneeId.Value;
+            GanNguoiThucHien(nv, nguoiNhan);
             nv.StatusCode = TrangThaiNhiemVu.DaGiao;
         }
 
@@ -246,7 +263,7 @@ public sealed class NhiemVuService
         _log.LogInformation("Tạo nhiệm vụ #{Id} bởi người dùng {UserId}, trạng thái {TrangThai}",
             nv.Id, creatorId, nv.StatusCode);
 
-        return await ChiTietAsync(nv.Id, creatorId, VaiTro.GiamDoc, ct);
+        return await DocChiTietAsync(nv.Id, ct);
     }
 
     /// <summary>
@@ -288,7 +305,7 @@ public sealed class NhiemVuService
         nv.DueDate = yeuCau.DueDate;
 
         await _db.SaveChangesAsync(ct);
-        return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
+        return await DocChiTietAsync(id, ct);
     }
 
     /// <summary>
@@ -353,16 +370,17 @@ public sealed class NhiemVuService
                 "Chỉ người tạo nhiệm vụ mới được giao nhiệm vụ này.");
         }
 
-        var loiNguoiNhan = await KiemTraNguoiThucHienAsync(yeuCau.AssigneeId, ct);
-        if (loiNguoiNhan is not null)
-            return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(loiNguoiNhan);
+        var (nguoiNhan, loiGiao) =
+            await PhamViToChuc.KiemTraGiaoAsync(_db, userId, yeuCau.AssigneeId, ct);
+        if (nguoiNhan is null)
+            return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(loiGiao!);
 
         // Đổi người khi vẫn còn ở DA_GIAO: không phải chuyển trạng thái nên bỏ qua bảng vòng đời.
         if (nv.StatusCode == TrangThaiNhiemVu.DaGiao)
         {
-            nv.AssigneeId = yeuCau.AssigneeId;
+            GanNguoiThucHien(nv, nguoiNhan);
             await _db.SaveChangesAsync(ct);
-            return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
+            return await DocChiTietAsync(id, ct);
         }
 
         if (!TrangThaiNhiemVu.ChuyenDuoc(nv.StatusCode, TrangThaiNhiemVu.DaGiao))
@@ -371,12 +389,12 @@ public sealed class NhiemVuService
                 MaLoiChung.ChuyenTrangThaiKhongHopLe);
         }
 
-        nv.AssigneeId = yeuCau.AssigneeId;
+        GanNguoiThucHien(nv, nguoiNhan);
         nv.StatusCode = TrangThaiNhiemVu.DaGiao;
         await _db.SaveChangesAsync(ct);
 
         _log.LogInformation("Giao nhiệm vụ #{Id} cho người dùng {AssigneeId}", id, yeuCau.AssigneeId);
-        return await ChiTietAsync(id, userId, VaiTro.GiamDoc, ct);
+        return await DocChiTietAsync(id, ct);
     }
 
     /// <summary>
@@ -405,32 +423,27 @@ public sealed class NhiemVuService
         await _db.SaveChangesAsync(ct);
 
         _log.LogInformation("Người dùng {UserId} tiếp nhận nhiệm vụ #{Id}", userId, id);
-        return await ChiTietAsync(id, userId, VaiTro.NhanVien, ct);
+        return await DocChiTietAsync(id, ct);
     }
 
     // =====================================================================
     // HỖ TRỢ
     // =====================================================================
 
-    /// <summary>Người tạo, người được giao, hoặc MANAGER thì được xem.</summary>
-    private static bool DuocXem(TaskItem nv, long userId, string vaiTro)
-        => nv.CreatorId == userId || nv.AssigneeId == userId || VaiTro.LaCapQuanLy(vaiTro);
-
-    /// <summary>Người nhận việc phải là EMPLOYEE đang hoạt động.</summary>
-    private async Task<string?> KiemTraNguoiThucHienAsync(long assigneeId, CancellationToken ct)
+    /// <summary>
+    /// Gắn người thực hiện, đồng thời gắn phòng thực thi và nhóm phụ trách theo người đó.
+    ///
+    /// <para>
+    /// Người làm thuộc phòng nào thì việc thuộc phòng đó — kể cả khi lúc tạo AI đã đoán
+    /// phòng khác, vì quyết định giao việc của con người mới là nhãn đúng. Phòng và nhóm lấy
+    /// cùng từ một người nên luôn thoả khoá ngoại ghép FK_TASKS_TEAM_DEPT.
+    /// </para>
+    /// </summary>
+    private static void GanNguoiThucHien(TaskItem nv, User nguoiNhan)
     {
-        var nguoi = await _db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == assigneeId, ct);
-
-        if (nguoi is null) return $"Không tìm thấy người dùng #{assigneeId}.";
-
-        if (!VaiTro.CoTheNhanViec(nguoi.Role))
-            return $"\"{nguoi.FullName}\" không phải người thực hiện nên không nhận được nhiệm vụ.";
-
-        if (nguoi.Status != TrangThaiNguoiDung.HoatDong)
-            return $"Tài khoản \"{nguoi.FullName}\" đã ngừng hoạt động.";
-
-        return null;
+        nv.AssigneeId = nguoiNhan.Id;
+        nv.DepartmentId = nguoiNhan.DepartmentId;
+        nv.TeamId = nguoiNhan.TeamId;
     }
 
     private static string? KiemTraNoiDung(
@@ -481,7 +494,8 @@ public sealed class NhiemVuService
         };
 
     private static NhiemVuTomTatDto ChuyenDoiTomTat(
-        TaskItem t, string? tenNguoiTao, string? tenNguoiThucHien, int? tienDo)
+        TaskItem t, string? tenNguoiTao, string? tenNguoiThucHien,
+        string? tenPhongBan, string? tenNhom, int? tienDo)
     {
         var soNgay = t.DueDate.HasValue
             ? (int?)(t.DueDate.Value.Date - DateTime.Today).TotalDays
@@ -499,6 +513,10 @@ public sealed class NhiemVuService
             TenNguoiTao = tenNguoiTao,
             AssigneeId = t.AssigneeId,
             TenNguoiThucHien = tenNguoiThucHien,
+            DepartmentId = t.DepartmentId,
+            TenPhongBan = tenPhongBan,
+            TeamId = t.TeamId,
+            TenNhom = tenNhom,
             StartDate = t.StartDate,
             DueDate = t.DueDate,
             SoNgayConLai = soNgay,
@@ -516,6 +534,7 @@ public sealed class NhiemVuService
         IReadOnlyList<TepDinhKemDto> tep)
     {
         var tom = ChuyenDoiTomTat(t, t.Creator?.FullName, t.Assignee?.FullName,
+            t.Department?.Name, t.Team?.Name,
             tienDo.Count > 0 ? tienDo[0].ProgressPercent : null);
 
         return new NhiemVuChiTietDto
@@ -531,6 +550,10 @@ public sealed class NhiemVuService
             TenNguoiTao = tom.TenNguoiTao,
             AssigneeId = tom.AssigneeId,
             TenNguoiThucHien = tom.TenNguoiThucHien,
+            DepartmentId = tom.DepartmentId,
+            TenPhongBan = tom.TenPhongBan,
+            TeamId = tom.TeamId,
+            TenNhom = tom.TenNhom,
             StartDate = tom.StartDate,
             DueDate = tom.DueDate,
             SoNgayConLai = tom.SoNgayConLai,

@@ -98,10 +98,15 @@ public sealed class GoiYService
                 "Cần có tiêu đề hoặc mô tả nhiệm vụ để tìm người phù hợp.");
         }
 
-        // --- 2. Lọc cứng: chỉ nhân viên đang hoạt động, trừ người đã được giao ---
+        // --- 2. Lọc cứng: chỉ những người mà người gọi ĐƯỢC GIAO VIỆC cho ---
+        // Dùng đúng quy tắc của nút "Giao" (PhamViToChuc), nên AI không bao giờ gợi ý một
+        // người mà lúc giao thật backend lại từ chối. Trừ người đang giữ chính việc này.
+        var viTriNguoiGoi = await PhamViToChuc.NapAsync(_db, nguoiGoiId, ct);
+        if (viTriNguoiGoi is null)
+            return KetQua<GoiYResponse>.KhongCoQuyen("Không xác định được người gọi.");
+
         var ungVien = await _db.Users.AsNoTracking()
-            .Where(u => (u.Role == VaiTro.TruongNhom || u.Role == VaiTro.NhanVien)
-                        && u.Status == TrangThaiNguoiDung.HoatDong)
+            .NguoiNhanDuoc(viTriNguoiGoi)
             .Where(u => assigneeHienTai == null || u.Id != assigneeHienTai)
             .Select(u => new { u.Id, u.FullName })
             .ToListAsync(ct);
@@ -109,7 +114,7 @@ public sealed class GoiYService
         if (ungVien.Count == 0)
         {
             return KetQua<GoiYResponse>.ThatBai(
-                "Không có nhân viên nào đang hoạt động để gợi ý.", MaLoiChung.LoiNghiepVu);
+                "Không có ai trong phạm vi của bạn để giao việc.", MaLoiChung.LoiNghiepVu);
         }
 
         var hoSo = ungVien.ToDictionary(
