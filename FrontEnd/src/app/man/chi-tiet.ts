@@ -72,6 +72,29 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
               </div>
             }
 
+            <!-- Đã giao nhưng người nhận chưa bấm Tiếp nhận: backend vẫn cho đổi người.
+                 Phải nói rõ đây là ĐỔI người, không thì người giao tưởng thao tác lúc nãy
+                 chưa ăn và bấm giao lại lần nữa. -->
+            @if (coTheDoiNguoi()) {
+              <p class="mo">
+                Đã giao cho <strong>{{ nv()!.tenNguoiThucHien }}</strong> — chưa tiếp nhận.
+                Còn đổi được người cho tới khi họ bấm Tiếp nhận.
+              </p>
+              <div class="hanh-dong">
+                <select [(ngModel)]="nguoiNhanId">
+                  <option [ngValue]="null">— Giữ nguyên người hiện tại —</option>
+                  @for (n of nguoiCoTheDoiSang(); track n.id) {
+                    <option [ngValue]="n.id">
+                      {{ n.fullName }}{{ n.jobTitle ? ' — ' + n.jobTitle : '' }}
+                    </option>
+                  }
+                </select>
+                <button class="phu-nhat" (click)="giao()" [disabled]="!nguoiNhanId">
+                  Đổi người thực hiện
+                </button>
+              </div>
+            }
+
             @if (coTheTiepNhan()) {
               <button class="nut-chinh" (click)="tiepNhan()">Tiếp nhận nhiệm vụ</button>
             }
@@ -140,7 +163,7 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
               </div>
             }
 
-            @if (!coTheGiao() && !coTheTiepNhan() && !coTheCapNhatTienDo()
+            @if (!coTheGiao() && !coTheDoiNguoi() && !coTheTiepNhan() && !coTheCapNhatTienDo()
                  && !coTheBaoCao() && !coTheDuyet()) {
               <p class="mo">
                 @if (nv()!.statusCode === 'HOAN_THANH') {
@@ -476,14 +499,37 @@ export class ChiTietComponent implements OnInit {
 
   // --- Điều kiện hiện nút. Chỉ để che bớt giao diện; quyền thật do backend quyết định. ---
 
+  /** Giao lần đầu — nhiệm vụ còn chưa có người thực hiện. */
   coTheGiao(): boolean {
     const nv = this.nv();
     return (
       !!nv &&
       this.auth.coTheGiaoViec() &&
       nv.creatorId === this.auth.nguoiDung()?.id &&
-      (nv.statusCode === 'MOI_TAO' || nv.statusCode === 'DA_GIAO')
+      nv.statusCode === 'MOI_TAO'
     );
+  }
+
+  /**
+   * Đổi người khi đã giao nhưng người nhận chưa tiếp nhận.
+   *
+   * Backend cho phép (NhiemVuService.GiaoAsync xử lý riêng ca DA_GIAO) vì lúc này chưa ai
+   * bắt tay vào việc. Tách khỏi {@link coTheGiao} để giao diện gọi đúng tên thao tác.
+   */
+  coTheDoiNguoi(): boolean {
+    const nv = this.nv();
+    return (
+      !!nv &&
+      this.auth.coTheGiaoViec() &&
+      nv.creatorId === this.auth.nguoiDung()?.id &&
+      nv.statusCode === 'DA_GIAO'
+    );
+  }
+
+  /** Danh sách để đổi sang — bỏ người đang giữ việc, chọn lại chính họ thì vô nghĩa. */
+  nguoiCoTheDoiSang(): NguoiDung[] {
+    const dangGiu = this.nv()?.assigneeId;
+    return this.nhanVien().filter((n) => n.id !== dangGiu);
   }
 
   coTheTiepNhan(): boolean {
@@ -522,6 +568,9 @@ export class ChiTietComponent implements OnInit {
       next: () => {
         this.thanhCong.set(thongBao);
         this.loi.set('');
+        // Trả ô chọn về rỗng. Để nguyên người vừa chọn thì màn hình trông như thao tác
+        // chưa gửi đi, và người giao dễ bấm thêm lần nữa.
+        this.nguoiNhanId = null;
         this.tai();
       },
       error: (e: any) => {
@@ -532,9 +581,11 @@ export class ChiTietComponent implements OnInit {
   }
 
   giao(): void {
-    if (this.nguoiNhanId) {
-      this.api.giao(this.id, this.nguoiNhanId).subscribe(this.xong('Đã giao nhiệm vụ.'));
-    }
+    if (!this.nguoiNhanId) return;
+    const doiNguoi = this.coTheDoiNguoi();
+    this.api
+      .giao(this.id, this.nguoiNhanId)
+      .subscribe(this.xong(doiNguoi ? 'Đã đổi người thực hiện.' : 'Đã giao nhiệm vụ.'));
   }
 
   tiepNhan(): void {
