@@ -170,7 +170,8 @@ public sealed class GoiYService
                 HieuSuat = ThanhPhan(d.HieuSuat, c.TrongSoHieuSuat),
                 ViecTuongTu = ThanhPhan(d.ViecTuongTu, c.TrongSoViecTuongTu),
                 DungHan = ThanhPhan(d.DungHan, c.TrongSoDungHan),
-                KhoiLuong = ThanhPhan(d.KhoiLuong, c.TrongSoKhoiLuong)
+                KhoiLuong = ThanhPhan(d.KhoiLuong, c.TrongSoKhoiLuong),
+                ThamNien = ThanhPhan(d.ThamNien, c.TrongSoThamNien)
             },
             SoLieu = new SoLieuUngVien
             {
@@ -178,6 +179,7 @@ public sealed class GoiYService
                 SoNhiemVuDungHan = x.SoDungHan,
                 SoNhiemVuDangLam = x.HoSo.SoDangLam,
                 TaiHienTai = x.HoSo.TaiHienTai,
+                SoNamLamViec = Math.Round(x.HoSo.SoNamLamViec, 1),
                 ChatLuongTrungBinh = x.ChatLuongTrungBinh is { } cl ? Math.Round(cl, 2) : null,
                 ChuaCoLichSu = x.SoHoanThanh == 0,
                 KyNangKhop = khop,
@@ -260,14 +262,18 @@ public sealed class GoiYService
                      (viec.ChatLuong is { } q ? $", được chấm {q}/5." : "."));
         }
 
+        var thamNien = x.HoSo.SoNamLamViec >= 0.1
+            ? $"Thâm niên {x.HoSo.SoNamLamViec:0.#} năm. "
+            : "Vừa vào công ty. ";
+
         if (x.SoHoanThanh == 0)
         {
-            lyDo.Add("Chưa hoàn thành việc nào — hiệu suất và đúng hạn đang dùng giá trị mặc định trung tính.");
+            lyDo.Add(thamNien + "Chưa hoàn thành việc nào — hiệu suất và đúng hạn đang dùng giá trị mặc định.");
         }
         else
         {
             var tyLe = (int)Math.Round(100.0 * x.SoDungHan / x.SoHoanThanh);
-            lyDo.Add($"Đã hoàn thành {x.SoHoanThanh} việc, đúng hạn {tyLe}%" +
+            lyDo.Add(thamNien + $"Đã hoàn thành {x.SoHoanThanh} việc, đúng hạn {tyLe}%" +
                      (x.ChatLuongTrungBinh is { } cl ? $", chất lượng trung bình {cl:0.0}/5." : "."));
         }
 

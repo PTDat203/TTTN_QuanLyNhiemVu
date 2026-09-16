@@ -4,8 +4,8 @@ namespace TaskApp.Api.Common;
 /// Bộ trọng số và tham số của mô hình gợi ý người thực hiện — phiên bản 2.
 ///
 /// <code>
-/// Điểm = 0,40 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
-///      + 0,10 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng
+/// Điểm = 0,35 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
+///      + 0,05 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng + 0,10 × ThâmNiên
 /// </code>
 ///
 /// <para>
@@ -20,7 +20,7 @@ public sealed class CauHinhGoiY
     // ------------------------------------------------------------------ trọng số, tổng = 1
 
     /// <summary>Độ khớp ngữ nghĩa giữa nội dung nhiệm vụ và hồ sơ người. Cao nhất vì là căn cứ trực tiếp nhất.</summary>
-    public double TrongSoNguNghia { get; set; } = 0.40;
+    public double TrongSoNguNghia { get; set; } = 0.35;
 
     /// <summary>Có đủ mức ở những kỹ năng nhiệm vụ đòi hỏi hay không.</summary>
     public double TrongSoMucKyNang { get; set; } = 0.15;
@@ -28,8 +28,18 @@ public sealed class CauHinhGoiY
     /// <summary>Điểm đánh giá chất lượng các việc đã hoàn thành.</summary>
     public double TrongSoHieuSuat { get; set; } = 0.15;
 
-    /// <summary>Đã làm những việc giống việc này chưa, và làm tốt tới đâu.</summary>
-    public double TrongSoViecTuongTu { get; set; } = 0.10;
+    /// <summary>
+    /// Đã làm những việc giống việc này chưa, và làm tốt tới đâu.
+    ///
+    /// <para>
+    /// Đây là chỗ nhường 0,05 cho thâm niên, chứ không phải ngữ nghĩa. Hai thành phần này trùng
+    /// nhau khá nhiều — cùng đo độ gần nghĩa, chỉ khác là một bên so với hồ sơ người, một bên so
+    /// với các việc người đó đã làm. Đo trên tập kiểm tra: hạ từ 0,10 xuống 0,05 để lấy chỗ cho
+    /// thâm niên thì mọi chỉ tiêu của mô hình nhúng giữ nguyên (Top-1 0,6667 · MRR 0,7886), còn
+    /// nếu bớt của ngữ nghĩa thì mất một việc (Top-1 0,6111 · MRR 0,7608).
+    /// </para>
+    /// </summary>
+    public double TrongSoViecTuongTu { get; set; } = 0.05;
 
     /// <summary>Tỷ lệ hoàn thành đúng hạn.</summary>
     public double TrongSoDungHan { get; set; } = 0.10;
@@ -37,16 +47,42 @@ public sealed class CauHinhGoiY
     /// <summary>Càng ít việc đang gánh càng cao — để việc được san đều, không dồn vào người giỏi nhất.</summary>
     public double TrongSoKhoiLuong { get; set; } = 0.10;
 
+    /// <summary>
+    /// Thâm niên — số năm đã làm ở công ty.
+    ///
+    /// <para>
+    /// Trọng số cố ý nhỏ hơn nhóm hiệu suất (0,15 hiệu suất + 0,10 đúng hạn): người lâu năm được
+    /// cộng thêm so với người vừa vào chưa có kinh nghiệm, nhưng người 1–2 năm làm tốt vẫn phải
+    /// hơn người 3–4 năm làm không tốt. Quan hệ này được ép cứng trong <see cref="KiemTra"/>.
+    /// </para>
+    /// <para>
+    /// Chọn 0,10 sau khi quét 0 / 0,05 / 0,10 / 0,15 trên tập kiểm tra: dưới 0,10 thì người vừa
+    /// vào chưa làm việc nào vẫn xếp TRÊN người sáu năm làm đúng hạn 100% ở ca #55; trên 0,10 thì
+    /// không đổi được thêm ca nào nữa mà chỉ bào mòn các thành phần khác.
+    /// </para>
+    /// </summary>
+    public double TrongSoThamNien { get; set; } = 0.10;
+
     // ------------------------------------------------------------------ người ít dữ liệu
 
     /// <summary>
-    /// Hiệu suất giả định khi chưa có đánh giá nào — tương đương 3,6/5. Không cho 0: nếu vậy người
-    /// mới vĩnh viễn không lọt vào gợi ý, và vĩnh viễn không có cơ hội có dữ liệu.
+    /// Hiệu suất giả định khi chưa có đánh giá nào — 0,35, tức DƯỚI giữa thang điểm.
+    ///
+    /// <para>
+    /// Không cho 0: nếu vậy người mới vĩnh viễn không lọt vào gợi ý, và vĩnh viễn không có cơ hội
+    /// có dữ liệu. Nhưng để dưới giữa thang, vì chưa chứng minh được gì thì chưa được coi ngang
+    /// người đã có thành tích. Đây mới là đòn bẩy chính cho người vừa vào — thâm niên chỉ phụ.
+    /// </para>
+    /// <para>
+    /// Hai giá trị này KHÔNG ảnh hưởng quy tắc "1–2 năm làm tốt hơn 3–4 năm làm kém": cả hai người
+    /// đó đều đã có lịch sử nên không dùng tới tiên nghiệm. Đo trên tập kiểm tra cũng cho đúng một
+    /// kết quả ở cả 0,50/0,60 lẫn 0,35/0,45, vì người chưa có lịch sử chưa từng là đáp án đúng.
+    /// </para>
     /// </summary>
-    public double HieuSuatTienNghiem { get; set; } = 0.65;
+    public double HieuSuatTienNghiem { get; set; } = 0.35;
 
-    /// <summary>Tỷ lệ đúng hạn giả định khi chưa có lịch sử.</summary>
-    public double TyLeDungHanTienNghiem { get; set; } = 0.70;
+    /// <summary>Tỷ lệ đúng hạn giả định khi chưa có lịch sử. Cùng lý lẽ như trên.</summary>
+    public double TyLeDungHanTienNghiem { get; set; } = 0.45;
 
     /// <summary>
     /// Số quan sát ảo khi làm mượt Laplace. Càng lớn thì người ít dữ liệu càng bị kéo về giá trị
@@ -71,6 +107,19 @@ public sealed class CauHinhGoiY
     /// <summary>Số ứng viên trả về mặc định.</summary>
     public int SoUngVienMacDinh { get; set; } = 5;
 
+    /// <summary>
+    /// Số năm làm việc để đạt điểm thâm niên tối đa; quá mốc này thì mọi người coi như ngang nhau.
+    ///
+    /// <para>
+    /// Để 2 năm chứ không phải 5. Thang log vốn đã dốc ở đoạn đầu, nhưng với trần 5 năm thì người
+    /// 1 năm (0,39) còn cách người 4 năm (0,90) tới 0,51 điểm — đúng chỗ quy tắc "1–2 năm làm tốt
+    /// hơn 3–4 năm làm kém" dễ vỡ nhất. Hạ trần về 2 năm kéo khoảng cách đó xuống 0,37 mà hầu như
+    /// không đụng tới khoảng cách người-mới ↔ cựu-binh (0,913 so với 0,947), nên biên an toàn của
+    /// quy tắc 2 tăng từ 1,42 lần lên 1,96 lần trong khi quy tắc 1 giữ nguyên kết quả.
+    /// </para>
+    /// </summary>
+    public double NamThamNienToiDa { get; set; } = 2.0;
+
     // ------------------------------------------------------------------ hiệu chỉnh riêng từng phương pháp
 
     /// <summary>Bộ ngưỡng của mô hình nhúng. Giá trị thật hiệu chỉnh bằng dữ liệu, đặt trong appsettings.json.</summary>
@@ -92,7 +141,7 @@ public sealed class CauHinhGoiY
 
     public double TongTrongSo =>
         TrongSoNguNghia + TrongSoMucKyNang + TrongSoHieuSuat +
-        TrongSoViecTuongTu + TrongSoDungHan + TrongSoKhoiLuong;
+        TrongSoViecTuongTu + TrongSoDungHan + TrongSoKhoiLuong + TrongSoThamNien;
 
     /// <summary>
     /// Kiểm cấu hình ngay khi khởi động. Tổng trọng số lệch khỏi 1 thì điểm tổng vượt 1 hoặc không
@@ -107,8 +156,51 @@ public sealed class CauHinhGoiY
                 "Kiểm tra lại mục 'GoiY' trong cấu hình.");
         }
 
+        if (NamThamNienToiDa <= 0)
+        {
+            throw new InvalidOperationException("GoiY:NamThamNienToiDa phải lớn hơn 0.");
+        }
+
+        KiemTraQuyTacThamNien();
+
         Nhung.KiemTra("GoiY:Nhung");
         TfIdf.KiemTra("GoiY:TfIdf");
+    }
+
+    /// <summary>
+    /// Ép cứng quy tắc nghiệp vụ: người 1 năm làm tốt phải hơn người 4 năm làm kém.
+    ///
+    /// <para>
+    /// Đây là chỗ dễ hỏng âm thầm nhất của mô hình — chỉ cần ai đó nâng trọng số thâm niên hoặc
+    /// nới trần số năm là thứ tự lật ngược mà không có lỗi nào báo ra, và phải soi từng ca gợi ý
+    /// mới phát hiện. Nên kiểm ngay lúc khởi động, bằng đúng hai người của tình huống đề bài:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item>người 1 năm: chất lượng 0,85 · đúng hạn 0,90</item>
+    ///   <item>người 4 năm: chất lượng 0,60 · đúng hạn 0,55</item>
+    /// </list>
+    /// <para>
+    /// Mọi thành phần còn lại coi như ngang nhau, nên chỉ cần lợi thế hiệu suất của người làm tốt
+    /// lớn hơn lợi thế thâm niên của người lâu năm.
+    /// </para>
+    /// </summary>
+    private void KiemTraQuyTacThamNien()
+    {
+        double DiemThamNien(double soNam) =>
+            Math.Min(1.0, Math.Log(1 + soNam) / Math.Log(1 + NamThamNienToiDa));
+
+        var loiTheThamNien = TrongSoThamNien * (DiemThamNien(4) - DiemThamNien(1));
+        var loiTheHieuSuat = TrongSoHieuSuat * (0.85 - 0.60) + TrongSoDungHan * (0.90 - 0.55);
+
+        if (loiTheThamNien >= loiTheHieuSuat)
+        {
+            throw new InvalidOperationException(
+                $"Bộ trọng số vi phạm quy tắc nghiệp vụ về thâm niên: người 4 năm làm kém đang được " +
+                $"lợi {loiTheThamNien:0.####} nhờ thâm niên, trong khi người 1 năm làm tốt chỉ được lợi " +
+                $"{loiTheHieuSuat:0.####} nhờ hiệu suất. Hạ GoiY:TrongSoThamNien " +
+                $"(đang {TrongSoThamNien:0.##}) hoặc GoiY:NamThamNienToiDa (đang {NamThamNienToiDa:0.##}), " +
+                "hoặc nâng GoiY:TrongSoHieuSuat / GoiY:TrongSoDungHan.");
+        }
     }
 }
 

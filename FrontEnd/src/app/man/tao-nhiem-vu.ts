@@ -165,8 +165,8 @@ import {
         } @else {
           <p class="mo">
             Nhập tiêu đề và mô tả nhiệm vụ rồi bấm <strong>Gợi ý</strong>. AI đoán nhiệm vụ thuộc
-            phòng nào, cần kỹ năng gì, rồi xếp hạng những người bạn giao được theo sáu tiêu chí:
-            ngữ nghĩa, mức kỹ năng, hiệu suất, việc tương tự, đúng hạn và khối lượng việc đang gánh.
+            phòng nào, cần kỹ năng gì, rồi xếp hạng những người bạn giao được theo bảy tiêu chí:
+            ngữ nghĩa, mức kỹ năng, hiệu suất, việc tương tự, đúng hạn, khối lượng việc đang gánh và thâm niên.
           </p>
         }
       </aside>

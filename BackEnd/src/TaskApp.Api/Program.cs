@@ -77,6 +77,11 @@ builder.Services.AddScoped<XuLyNhiemVuService>();
 // Bo trong so va nguong — doc tu muc "GoiY", co gia tri mac dinh neu thieu.
 builder.Services.Configure<CauHinhGoiY>(builder.Configuration.GetSection(CauHinhGoiY.Muc));
 
+// Dung ngay luc khoi dong neu bo trong so sai: tong khac 1, hoac vi pham quy tac nghiep vu
+// "nguoi 1-2 nam lam tot phai hon nguoi 3-4 nam lam kem". De den luc goi y dau tien moi bao thi
+// loi da nam san trong cau hinh ma khong ai biet.
+(builder.Configuration.GetSection(CauHinhGoiY.Muc).Get<CauHinhGoiY>() ?? new CauHinhGoiY()).KiemTra();
+
 // Dich vu nhung ngu nghia chay rieng bang Python (BackEnd/ai). Tat hoac khong chay thi phan
 // goi y tu lui ve TF-IDF — ung dung van chay binh thuong, khong phu thuoc vao Python.
 builder.Services.Configure<CauHinhDichVuNhung>(builder.Configuration.GetSection(CauHinhDichVuNhung.Muc));

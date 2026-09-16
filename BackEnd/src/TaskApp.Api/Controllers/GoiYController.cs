@@ -46,7 +46,7 @@ public sealed class GoiYController : ControllerBase
     ///         để xem gợi ý ngay trên màn tạo nhiệm vụ.</item>
     /// </list>
     /// Kết quả gồm: AI đoán nhiệm vụ thuộc phòng nào, cần kỹ năng gì; rồi danh sách ứng viên, mỗi
-    /// người kèm điểm sáu thành phần, số liệu thô và lý do tiếng Việt.
+    /// người kèm điểm bảy thành phần, số liệu thô và lý do tiếng Việt.
     /// </remarks>
     [HttpPost("nguoi-thuc-hien")]
     [ProducesResponseType(typeof(GoiYResponse), StatusCodes.Status200OK)]
@@ -96,6 +96,7 @@ public sealed class GoiYController : ControllerBase
                 viecTuongTu = c.TrongSoViecTuongTu,
                 dungHan = c.TrongSoDungHan,
                 khoiLuong = c.TrongSoKhoiLuong,
+                thamNien = c.TrongSoThamNien,
                 tong = c.TongTrongSo
             },
             thamSo = new
@@ -105,7 +106,8 @@ public sealed class GoiYController : ControllerBase
                 soQuanSatAo = c.SoQuanSatAo,
                 nguongKhoiLuong = c.NguongKhoiLuong,
                 soViecTuongTu = c.SoViecTuongTu,
-                mucKyNangMacDinh = c.MucKyNangMacDinh
+                mucKyNangMacDinh = c.MucKyNangMacDinh,
+                namThamNienToiDa = c.NamThamNienToiDa
             },
             hieuChinh = new { nhung = c.Nhung, tfIdf = c.TfIdf },
             giaiThich = new
@@ -115,7 +117,8 @@ public sealed class GoiYController : ControllerBase
                 hieuSuat = "Điểm đánh giá chất lượng các việc đã hoàn thành, làm mượt Laplace để người ít dữ liệu không bị điểm cực đoan.",
                 viecTuongTu = "Đã làm những việc giống việc này chưa, và làm tốt tới đâu. Chưa làm việc nào giống thì trung tính.",
                 dungHan = "Tỷ lệ hoàn thành trước hạn, làm mượt Laplace.",
-                khoiLuong = "Càng ít việc đang gánh thì điểm càng cao, để việc không dồn hết vào người giỏi nhất."
+                khoiLuong = "Càng ít việc đang gánh thì điểm càng cao, để việc không dồn hết vào người giỏi nhất.",
+                thamNien = "Số năm đã làm ở công ty, thang log. Trọng số nhỏ: người lâu năm hơn người mới, nhưng làm tốt vẫn thắng thâm niên."
             }
         });
     }

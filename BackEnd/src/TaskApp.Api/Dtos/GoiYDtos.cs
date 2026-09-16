@@ -33,7 +33,7 @@ public sealed class ThanhPhanDiem
     public double DongGop { get; set; }
 }
 
-/// <summary>Sáu thành phần cấu thành điểm phù hợp.</summary>
+/// <summary>Bảy thành phần cấu thành điểm phù hợp.</summary>
 public sealed class ChiTietDiem
 {
     /// <summary>Độ khớp ngữ nghĩa giữa nội dung nhiệm vụ và hồ sơ người.</summary>
@@ -53,6 +53,9 @@ public sealed class ChiTietDiem
 
     /// <summary>Mức rảnh — càng ít việc đang gánh càng cao.</summary>
     public ThanhPhanDiem KhoiLuong { get; set; } = new();
+
+    /// <summary>Số năm đã làm ở công ty, thang log.</summary>
+    public ThanhPhanDiem ThamNien { get; set; } = new();
 }
 
 /// <summary>Một việc đã làm, gần với nhiệm vụ đang cần giao.</summary>
@@ -77,6 +80,9 @@ public sealed class SoLieuUngVien
 
     /// <summary>Tổng trọng số ưu tiên của các việc đang mở.</summary>
     public double TaiHienTai { get; set; }
+
+    /// <summary>Số năm đã làm ở công ty.</summary>
+    public double SoNamLamViec { get; set; }
 
     /// <summary>Chất lượng trung bình thang 1..5. Rỗng khi chưa có đánh giá nào.</summary>
     public double? ChatLuongTrungBinh { get; set; }

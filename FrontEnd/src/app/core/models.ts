@@ -179,7 +179,7 @@ export interface ThanhPhanDiem {
   dongGop: number;
 }
 
-/** Sáu thành phần cấu thành điểm phù hợp. */
+/** Bảy thành phần cấu thành điểm phù hợp. */
 export interface ChiTietDiem {
   nguNghia: ThanhPhanDiem;
   mucKyNang: ThanhPhanDiem;
@@ -187,6 +187,7 @@ export interface ChiTietDiem {
   viecTuongTu: ThanhPhanDiem;
   dungHan: ThanhPhanDiem;
   khoiLuong: ThanhPhanDiem;
+  thamNien: ThanhPhanDiem;
 }
 
 export interface ViecTuongTu {
@@ -201,6 +202,8 @@ export interface SoLieuUngVien {
   soNhiemVuDungHan: number;
   soNhiemVuDangLam: number;
   taiHienTai: number;
+  /** Số năm đã làm ở công ty. */
+  soNamLamViec: number;
   chatLuongTrungBinh?: number | null;
   /** Chưa hoàn thành việc nào — hiệu suất và đúng hạn đang là giá trị mặc định. */
   chuaCoLichSu: boolean;
@@ -266,7 +269,7 @@ export interface GoiYResponse {
 }
 
 /**
- * Sáu thành phần điểm theo thứ tự trọng số giảm dần, kèm tên và màu. Dùng chung cho thanh
+ * Bảy thành phần điểm theo thứ tự trọng số giảm dần, kèm tên và màu. Dùng chung cho thanh
  * phân rã điểm và chú giải, để hai chỗ không bao giờ lệch màu nhau.
  */
 export const THANH_PHAN_DIEM: readonly { khoa: keyof ChiTietDiem; ten: string; mau: string }[] = [
@@ -276,6 +279,7 @@ export const THANH_PHAN_DIEM: readonly { khoa: keyof ChiTietDiem; ten: string; m
   { khoa: 'viecTuongTu', ten: 'Việc tương tự', mau: '#db2777' },
   { khoa: 'dungHan', ten: 'Đúng hạn', mau: '#16a34a' },
   { khoa: 'khoiLuong', ten: 'Khối lượng', mau: '#d97706' },
+  { khoa: 'thamNien', ten: 'Thâm niên', mau: '#64748b' },
 ];
 
 // ---------------------------------------------------------------- nhãn hiển thị

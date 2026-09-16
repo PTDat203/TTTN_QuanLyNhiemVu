@@ -55,6 +55,9 @@ public sealed class HoSoUngVien
 
     public IReadOnlyList<ViecLichSu> ViecDaXong { get; init; } = Array.Empty<ViecLichSu>();
 
+    /// <summary>Số năm đã làm ở công ty, tính tới mốc thời gian đang xét.</summary>
+    public double SoNamLamViec { get; init; }
+
     public int SoDangLam { get; init; }
 
     /// <summary>Tổng trọng số ưu tiên của các việc đang mở (HIGH 3, MEDIUM 2, LOW 1).</summary>
@@ -168,7 +171,7 @@ public sealed class KetQuaSuyLuan
     public IReadOnlyDictionary<long, double> DiemKyNang { get; set; } = new Dictionary<long, double>();
 }
 
-/// <summary>Sáu thành phần điểm, mỗi thành phần 0..1.</summary>
+/// <summary>Bảy thành phần điểm, mỗi thành phần 0..1.</summary>
 public sealed class DiemThanhPhan
 {
     public double NguNghia { get; init; }
@@ -177,6 +180,7 @@ public sealed class DiemThanhPhan
     public double ViecTuongTu { get; init; }
     public double DungHan { get; init; }
     public double KhoiLuong { get; init; }
+    public double ThamNien { get; init; }
 }
 
 public sealed class KetQuaUngVien

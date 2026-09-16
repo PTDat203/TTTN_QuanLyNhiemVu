@@ -32,6 +32,7 @@ sqlplus TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @24_seed_v2.sql
 | `22_seed_nhiem_vu.sql` | Dữ liệu | 90 nhiệm vụ kèm tiến độ, báo cáo, tệp | Có — **xoá sạch** nhiệm vụ |
 | `23_nang_cap_v2.sql` | Lược đồ | Nhóm, danh mục kỹ năng, kỹ năng yêu cầu, điểm đánh giá | Có — chỉ mở rộng |
 | `24_seed_v2.sql` | Dữ liệu | Dữ liệu cho phần V2 | Có — không xoá người hay nhiệm vụ |
+| `25_don_rac_kiem_thu.sql` | Dữ liệu | Xoá nhiệm vụ do `kiem_thu_phan_quyen.py` sinh ra | Có — an toàn, xem mục dưới |
 | `_khong_dung/` | — | Script cũ hoặc phá huỷ dữ liệu | **Không** — xem `_khong_dung/README.md` |
 
 ### Dựng lại toàn bộ dữ liệu demo
@@ -42,6 +43,24 @@ sqlplus TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @24_seed_v2.sql
 
 21 và 22 đều xoá dữ liệu và làm mất phần V2 gắn với nó, nên 24 luôn chạy sau cùng.
 Mật khẩu mọi tài khoản demo: `123456`.
+
+### Dọn rác sau khi chạy bộ kiểm thử phân quyền
+
+`kiem_thu_phan_quyen.py` tạo nhiệm vụ thật để kiểm quy tắc giao việc. Việc nào giao thành công
+thì API không cho xoá nữa (chỉ xoá được khi còn "Mới tạo"), nên chúng ở lại database **ở trạng
+thái đang mở**. Đó không phải chuyện nhỏ: khối lượng việc đang gánh là một thành phần chấm điểm
+của mô hình gợi ý, nên rác tích lại sẽ đẩy người nhận xuống hạng một cách vô cớ và làm lệch cả
+số liệu đánh giá.
+
+Bộ kiểm thử tự xoá những việc nó xoá được và in ra id của phần còn lại. Dọn nốt bằng:
+
+```bash
+export NLS_LANG=.AL32UTF8
+sqlplus -S TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @25_don_rac_kiem_thu.sql
+```
+
+Script chỉ xoá nhiệm vụ trùng đúng tiêu đề mà bộ kiểm thử dùng **và** chưa từng có tiến độ hay
+báo cáo, nên không bao giờ chạm vào dữ liệu nghiệp vụ thật. Nó in danh sách trước khi xoá.
 
 ### Còn nợ: bước thu hẹp lược đồ
 

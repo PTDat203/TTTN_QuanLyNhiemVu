@@ -20,8 +20,8 @@ namespace TaskApp.Api.Services.GoiY;
 ///
 /// <para><b>Tầng 2 — xếp hạng</b> bên trong tập đã lọc:</para>
 /// <code>
-/// Điểm = 0,40 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
-///      + 0,10 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng
+/// Điểm = 0,35 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
+///      + 0,10 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng + 0,05 × ThâmNiên
 /// </code>
 ///
 /// <para>
@@ -260,6 +260,11 @@ public sealed class BoXepHang
         // Khối lượng: càng rảnh càng cao, đầy tải thì 0.
         var khoiLuong = Math.Clamp(1.0 - u.TaiHienTai / c.NguongKhoiLuong, 0.0, 1.0);
 
+        // Thâm niên: người làm lâu được cộng thêm so với người vừa vào chưa có kinh nghiệm.
+        // Thang log để một hai năm đầu đáng giá hơn hẳn năm thứ bảy, thứ tám. Trọng số nhỏ nên
+        // không bao giờ lật ngược được chênh lệch về hiệu suất.
+        var thamNien = Math.Min(1.0, Math.Log(1 + u.SoNamLamViec) / Math.Log(1 + c.NamThamNienToiDa));
+
         var diem = new DiemThanhPhan
         {
             NguNghia = nguNghia,
@@ -267,7 +272,8 @@ public sealed class BoXepHang
             HieuSuat = hieuSuat,
             ViecTuongTu = viecTuongTu,
             DungHan = dungHan,
-            KhoiLuong = khoiLuong
+            KhoiLuong = khoiLuong,
+            ThamNien = thamNien
         };
 
         var chatLuong = u.ViecDaXong.Where(v => v.ChatLuong.HasValue).Select(v => (double)v.ChatLuong!.Value).ToList();
@@ -279,7 +285,8 @@ public sealed class BoXepHang
             Tong = Math.Round(
                 DongGop(diem.NguNghia, c.TrongSoNguNghia) + DongGop(diem.MucKyNang, c.TrongSoMucKyNang) +
                 DongGop(diem.HieuSuat, c.TrongSoHieuSuat) + DongGop(diem.ViecTuongTu, c.TrongSoViecTuongTu) +
-                DongGop(diem.DungHan, c.TrongSoDungHan) + DongGop(diem.KhoiLuong, c.TrongSoKhoiLuong), 4),
+                DongGop(diem.DungHan, c.TrongSoDungHan) + DongGop(diem.KhoiLuong, c.TrongSoKhoiLuong) +
+                DongGop(diem.ThamNien, c.TrongSoThamNien), 4),
             SoHoanThanh = soXong,
             SoDungHan = soDung,
             ChatLuongTrungBinh = chatLuong.Count == 0 ? null : chatLuong.Average(),

@@ -134,7 +134,8 @@ public static class NapDuLieuGoiY
                 u.Id, u.FullName, u.Role, u.JobTitle, u.DepartmentId,
                 TenPhong = u.Department != null ? u.Department.Name : null,
                 u.TeamId,
-                TenNhom = u.Team != null ? u.Team.Name : null
+                TenNhom = u.Team != null ? u.Team.Name : null,
+                u.HiredDate
             })
             .ToListAsync(ct);
 
@@ -154,6 +155,10 @@ public static class NapDuLieuGoiY
 
         var tai = await KhoiLuongAsync(db, ids, baoCaoDat, moc, boQuaTaskId, ct);
         var lichSuTheoNguoi = lichSu.ToLookup(v => v.AssigneeId);
+
+        // Thâm niên phải tính tại MỐC, không phải tại hôm nay — nếu không, khi đánh giá lại lịch
+        // sử thì người nào cũng "đã làm nhiều năm", tức là mô hình biết trước tương lai.
+        var mocThamNien = moc ?? DateTime.Now;
 
         return nguoi.Select(u =>
         {
@@ -178,6 +183,9 @@ public static class NapDuLieuGoiY
                     .GroupBy(s => s.SkillId!.Value)
                     .ToDictionary(g => g.Key, g => g.Max(s => s.SkillLevel ?? 1)),
                 ViecDaXong = lichSuTheoNguoi[u.Id].ToList(),
+                SoNamLamViec = u.HiredDate is { } ngayVao
+                    ? Math.Max(0, (mocThamNien - ngayVao).TotalDays / 365.25)
+                    : 0,
                 SoDangLam = soDangLam,
                 TaiHienTai = taiHienTai
             };
