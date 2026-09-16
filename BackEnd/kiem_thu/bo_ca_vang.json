@@ -1,0 +1,141 @@
+{
+  "_doc": [
+    "Bộ ca kiểm thử chuẩn cho phần AI gợi ý người thực hiện.",
+    "",
+    "Đây là ĐÁP ÁN DO NGƯỜI ĐẶT, không suy ra từ lịch sử. Mỗi ca là một tình huống thật của",
+    "công ty kèm kết quả mà người quản lý cho là đúng. Sửa tệp này bằng tay, thêm ca mới mỗi",
+    "khi gặp một lần gợi ý sai — đó là cách bộ này lớn lên.",
+    "",
+    "Chạy:  python chay_ca_vang.py",
+    "",
+    "Các loại kỳ vọng, khai được từng phần, bỏ trống thì không kiểm:",
+    "  phong       tên phòng đứng đầu (khớp một phần, không phân biệt hoa thường)",
+    "  khongPhong  phòng đứng đầu KHÔNG được là phòng này",
+    "  ketLuan     CHAC_CHAN | LUONG_LU | KHONG_RO, hoặc danh sách các giá trị chấp nhận được",
+    "  topN        { n, ai: [tên đăng nhập] } — ít nhất một người trong danh sách phải ở top n",
+    "  khongTop    { n, ai: [tên đăng nhập] } — không ai trong danh sách được ở top n",
+    "  tren        [[a, b], ...] — a phải xếp trên b",
+    "",
+    "bietTruocLech: true  đánh dấu ca ĐÃ BIẾT là đang sai và chưa sửa. Script báo riêng,",
+    "không tính là hồi quy. Bỏ cờ này đi khi đã sửa xong."
+  ],
+
+  "cac_ca": [
+    {
+      "ma": "tien-dien",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Xử lý tiền điện tháng 8",
+      "moTa": "Đang chưa đóng tiền điện",
+      "kyVong": {
+        "phong": "Hành chính",
+        "topN": { "n": 3, "ai": ["nv.nga", "nv.phuc", "tp.hanhchinh"] }
+      },
+      "ghiChu": "Việc hành chính đời thường, mô tả rất ngắn. Trước 16/09 ra KHÔNG RÕ rồi gợi ý trưởng nhóm Backend."
+    },
+    {
+      "ma": "cai-windows",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Cài lại Windows cho máy tính công ty",
+      "moTa": "Máy nhân viên chạy chậm, cần cài lại hệ điều hành và phần mềm văn phòng",
+      "kyVong": {
+        "phong": "Phát triển",
+        "ketLuan": "CHAC_CHAN"
+      },
+      "ghiChu": "Trước khi làm dày hồ sơ phòng ban thì ra Nhân sự 0,77 — sai hẳn."
+    },
+    {
+      "ma": "wifi-chap-chon",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Wifi tầng 3 chập chờn",
+      "moTa": "Nhân viên hay mất kết nối khi họp trực tuyến",
+      "kyVong": { "phong": "Phát triển" },
+      "ghiChu": "Trước khi làm dày hồ sơ thì ra KHÔNG RÕ."
+    },
+    {
+      "ma": "mua-giay-in",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Mua thêm giấy in cho văn phòng",
+      "moTa": "Kho sắp hết giấy A4",
+      "kyVong": { "phong": "Hành chính" },
+      "ghiChu": "Không ghim ketLuan vì đây là ca hợp lý khi lưỡng lự."
+    },
+    {
+      "ma": "hop-dong-lao-dong",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Làm hợp đồng lao động cho nhân viên mới",
+      "moTa": "Chuẩn bị hồ sơ, ký hợp đồng và đăng ký bảo hiểm xã hội",
+      "kyVong": {
+        "phong": "Nhân sự",
+        "ketLuan": "CHAC_CHAN"
+      }
+    },
+    {
+      "ma": "api-dang-nhap",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Viết API đăng nhập cho hệ thống",
+      "moTa": "Dùng ASP.NET Core và JWT, có làm mới token và thu hồi phiên",
+      "kyVong": {
+        "phong": "Phát triển",
+        "ketLuan": "CHAC_CHAN"
+      },
+      "ghiChu": "Ca chuyên môn rõ nhất. Hỏng ca này là hỏng nặng."
+    },
+    {
+      "ma": "oracle-toi-uu",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Tối ưu truy vấn thống kê tổng hợp trên Oracle",
+      "moTa": "Báo cáo cuối tháng chạy mất hơn ba phút. Phân tích kế hoạch thực thi, cân nhắc khung nhìn cụ thể hoá hoặc bảng tổng hợp",
+      "kyVong": {
+        "phong": "Phát triển",
+        "topN": { "n": 1, "ai": ["nv.giang"] }
+      },
+      "ghiChu": "Giang là kỹ sư cơ sở dữ liệu, phải đứng đầu chứ không chỉ lọt top."
+    },
+    {
+      "ma": "tham-nien-nguoi-moi",
+      "nguoiTao": "leader.be",
+      "tieuDe": "Viết điểm cuối tra cứu lịch sử giao dịch",
+      "moTa": "Thêm API tra cứu lịch sử giao dịch theo khoảng ngày, có phân trang. Dùng C# và Entity Framework Core trên Oracle",
+      "kyVong": {
+        "khongTop": { "n": 2, "ai": ["nv.tuan"] }
+      },
+      "ghiChu": "Tuấn vào làm 17/08/2026, chưa có lịch sử. Quy tắc nghiệp vụ: người vừa vào không được xếp trên cựu binh làm tốt."
+    },
+    {
+      "ma": "tiec-tat-nien",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Chuẩn bị tiệc tất niên cho toàn công ty",
+      "moTa": "Khảo sát và đặt nhà hàng, lên thực đơn, chuẩn bị chương trình văn nghệ và bốc thăm trúng thưởng",
+      "kyVong": { "khongPhong": "Phát triển" },
+      "ghiChu": "Dương tính giả kinh điển của TF-IDF: trùng nhiều từ với việc kỹ thuật nhưng chẳng liên quan."
+    },
+    {
+      "ma": "mo-ho",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Rà soát và cải thiện quy trình nội bộ",
+      "moTa": "Xem lại các quy trình đang dùng, tìm chỗ chồng chéo và đề xuất điều chỉnh",
+      "kyVong": { "ketLuan": ["LUONG_LU", "KHONG_RO"] },
+      "bietTruocLech": true,
+      "ghiChu": "ĐANG SAI, nhưng SÁT NGƯỠNG: cách biệt phòng 1 và 2 là 0,147 còn ngưỡng CHẮC CHẮN là 0,140 — hơn đúng 0,007. Sáng 16/09 đo còn ra LƯỠNG LỰ (cách biệt 0,092). Ca này lật qua lật lại mỗi khi lịch sử nhúc nhích, nên giữ làm chim báo bão chứ đừng coi là hồi quy thật."
+    },
+    {
+      "ma": "tuyen-lap-trinh-vien",
+      "nguoiTao": "giamdoc",
+      "tieuDe": "Tuyển 2 lập trình viên Backend",
+      "moTa": "Đăng tin tuyển dụng, sàng lọc hồ sơ và sắp lịch phỏng vấn",
+      "kyVong": { "phong": "Nhân sự" },
+      "bietTruocLech": true,
+      "ghiChu": "ĐANG SAI: ra Phòng Phát triển vì mấy chữ 'lập trình viên Backend' áp đảo. Lịch sử biết đúng (Nhân sự 0,78) nhưng hồ sơ phòng áp đảo (Phát triển 1,00). Tuyển dụng là việc của Nhân sự dù tuyển vị trí gì."
+    },
+    {
+      "ma": "pham-vi-truong-nhom",
+      "nguoiTao": "leader.be",
+      "tieuDe": "Sửa lỗi hiển thị danh sách nhiệm vụ trên giao diện",
+      "moTa": "Danh sách bị lệch cột khi tiêu đề quá dài",
+      "kyVong": {
+        "khongTop": { "n": 99, "ai": ["nv.hoa", "nv.khanh", "nv.lan", "nv.nga"] }
+      },
+      "ghiChu": "Trưởng nhóm Backend chỉ được giao trong nhóm mình. Người nhóm Frontend và phòng khác KHÔNG được xuất hiện ở bất kỳ hạng nào."
+    }
+  ]
+}

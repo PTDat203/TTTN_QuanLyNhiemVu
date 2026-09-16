@@ -1,0 +1,188 @@
+{
+ "chayLuc": "2026-09-16T19:21:18",
+ "phienBanTrongSo": "v2.2-tham-nien-16-09-2026",
+ "soNhiemVuTrongDb": 112,
+ "ketQua": [
+  {
+   "ma": "tien-dien",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.08)"
+    },
+    {
+     "ten": "top N",
+     "dat": true,
+     "chiTiet": "top 3: 1.Đinh Thị Nga, 2.Lê Văn Thắng, 3.Trịnh Hồng Phúc"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "cai-windows",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.58)"
+    },
+    {
+     "ten": "kết luận",
+     "dat": true,
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.290"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "wifi-chap-chon",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.30)"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "mua-giay-in",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.35)"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "hop-dong-lao-dong",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Nhân sự (0.95)"
+    },
+    {
+     "ten": "kết luận",
+     "dat": true,
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.212"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "api-dang-nhap",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.94)"
+    },
+    {
+     "ten": "kết luận",
+     "dat": true,
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.893"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "oracle-toi-uu",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.71)"
+    },
+    {
+     "ten": "top N",
+     "dat": true,
+     "chiTiet": "top 1: 1.Hoàng Văn Giang"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "tham-nien-nguoi-moi",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "không top",
+     "dat": true,
+     "chiTiet": "không ai trong danh sách lọt top 2"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "tiec-tat-nien",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "không phải phòng",
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.87)"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "mo-ho",
+   "trangThai": "LECH_DA_BIET",
+   "bietTruocLech": true,
+   "muc": [
+    {
+     "ten": "kết luận",
+     "dat": false,
+     "chiTiet": "ra CHAC_CHAN, chấp nhận LUONG_LU/KHONG_RO, cách biệt 0.147"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "tuyen-lap-trinh-vien",
+   "trangThai": "LECH_DA_BIET",
+   "bietTruocLech": true,
+   "muc": [
+    {
+     "ten": "phòng",
+     "dat": false,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.63)"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  },
+  {
+   "ma": "pham-vi-truong-nhom",
+   "trangThai": "DAT",
+   "bietTruocLech": false,
+   "muc": [
+    {
+     "ten": "không top",
+     "dat": true,
+     "chiTiet": "không ai trong danh sách lọt top 99"
+    }
+   ],
+   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+  }
+ ]
+}

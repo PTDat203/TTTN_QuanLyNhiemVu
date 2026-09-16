@@ -1,0 +1,7 @@
+# Kết quả đo thô của hieu_chinh.py — to, sinh lại được, không cần theo dõi lịch sử.
+ket_qua_phan-bo.json
+ket_qua_do-nguong-*.json
+ket_qua_chay*.json
+
+# ket_qua_ca_vang.json thì CÓ theo dõi: nó nhỏ, và commit nó vào git giúp nhìn thấy
+# mô hình trôi đi lúc nào, ngay trên diff.
