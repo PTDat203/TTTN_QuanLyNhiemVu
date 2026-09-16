@@ -325,8 +325,19 @@ public sealed class GoiYService
 
             if (kq.UngVien.Max(u => u.Diem.NguNghia) < 0.2)
             {
-                canhBao.Add("Không ai có hồ sơ khớp rõ với nội dung nhiệm vụ. Thứ hạng dưới đây chủ yếu dựa trên " +
-                            "hiệu suất và khối lượng việc, không phải chuyên môn.");
+                // Nói đúng cái đang thực sự chi phối thứ hạng. Ở nhánh KHÔNG RÕ, điểm ngữ nghĩa
+                // được nâng sàn theo độ khớp của phòng (BoXepHang.NguNghiaCoSan), nên người giao
+                // cần biết thứ hạng có dựa một phần vào phòng ban — dù là căn cứ yếu.
+                var theoPhong = kq.SuyLuan.KetLuan == KetLuanPhongBan.KhongRo
+                                && kq.SuyLuan.CacPhong.Count > 0
+                                && kq.SuyLuan.CacPhong[0].Diem > 0;
+
+                canhBao.Add(theoPhong
+                    ? "Không ai có hồ sơ khớp rõ với nội dung nhiệm vụ. AI cũng không chắc nhiệm vụ thuộc phòng " +
+                      $"nào, nên chỉ nghiêng nhẹ về {kq.SuyLuan.CacPhong[0].DonVi.Ten} — đây là căn cứ yếu. " +
+                      "Phần còn lại của thứ hạng dựa trên hiệu suất và khối lượng việc."
+                    : "Không ai có hồ sơ khớp rõ với nội dung nhiệm vụ. Thứ hạng dưới đây chủ yếu dựa trên " +
+                      "hiệu suất và khối lượng việc, không phải chuyên môn.");
             }
         }
 

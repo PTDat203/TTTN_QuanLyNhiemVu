@@ -164,8 +164,22 @@ public sealed class BoXepHang
         // ---- 5. Tầng 2: chấm điểm -------------------------------------------------------
         var diemHoSo = await SoVoi(xet.Select(u => u.VanBanHoSo).ToList(), KieuSoSanh.BatDoiXung);
 
+        // Khi tầng 1 kết luận KHÔNG RÕ thì không lọc ai — nhưng đừng vì thế mà vứt luôn tín hiệu
+        // phòng ban. Nó yếu, không đủ để lọc cứng, song vẫn là thông tin phân biệt DUY NHẤT còn
+        // lại: KHÔNG RÕ gần như luôn đi kèm việc chẳng hồ sơ cá nhân nào khớp, nên nếu bỏ nốt thì
+        // thứ hạng chỉ còn do hiệu suất và khối lượng quyết định — và một hoá đơn tiền điện sẽ
+        // được gợi ý cho trưởng nhóm Backend chỉ vì anh ta làm tốt và đang rảnh.
+        //
+        // Dùng làm SÀN chứ không cộng thêm: ai tự khớp tốt hơn phòng mình thì giữ nguyên điểm của
+        // họ, ai không khớp gì thì ít nhất được hưởng độ khớp của phòng. Chỉ áp dụng ở nhánh
+        // KHÔNG RÕ; hai nhánh kia đã lọc theo phòng rồi nên cộng vào chỉ là dịch cả cụm.
+        var sanTheoPhong = suyLuan.KetLuan == KetLuanPhongBan.KhongRo
+            ? suyLuan.CacPhong.ToDictionary(p => p.DonVi.Id, p => p.Diem)
+            : null;
+
         kq.UngVien = xet
-            .Select((u, i) => ChamDiem(u, diemHoSo[i], suyLuan.KyNang, doGanTheoViec))
+            .Select((u, i) => ChamDiem(u, NguNghiaCoSan(u, diemHoSo[i], sanTheoPhong),
+                                       suyLuan.KyNang, doGanTheoViec))
             .OrderByDescending(x => x.Tong)
             // Điểm bằng nhau thì ưu tiên người rảnh hơn, rồi đến tên cho thứ tự ổn định.
             .ThenBy(x => x.HoSo.TaiHienTai)
@@ -173,6 +187,17 @@ public sealed class BoXepHang
             .ToList();
 
         return kq;
+    }
+
+    /// <summary>
+    /// Điểm ngữ nghĩa của một ứng viên, có tính tới độ khớp của phòng họ khi tầng 1 không kết
+    /// luận được. Trả về đúng <paramref name="diemHoSo"/> trong mọi trường hợp còn lại.
+    /// </summary>
+    private static double NguNghiaCoSan(
+        HoSoUngVien u, double diemHoSo, IReadOnlyDictionary<long, double>? sanTheoPhong)
+    {
+        if (sanTheoPhong is null || u.DepartmentId is not { } phong) return diemHoSo;
+        return sanTheoPhong.TryGetValue(phong, out var san) ? Math.Max(diemHoSo, san) : diemHoSo;
     }
 
     /// <summary>
