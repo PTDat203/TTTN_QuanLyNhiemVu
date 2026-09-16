@@ -33,6 +33,7 @@ sqlplus TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @24_seed_v2.sql
 | `23_nang_cap_v2.sql` | Lược đồ | Nhóm, danh mục kỹ năng, kỹ năng yêu cầu, điểm đánh giá | Có — chỉ mở rộng |
 | `24_seed_v2.sql` | Dữ liệu | Dữ liệu cho phần V2 | Có — không xoá người hay nhiệm vụ |
 | `25_don_rac_kiem_thu.sql` | Dữ liệu | Xoá nhiệm vụ do `kiem_thu_phan_quyen.py` sinh ra | Có — an toàn, xem mục dưới |
+| `26_don_du_lieu_thu.sql` | Dữ liệu | Xoá bộ nhiệm vụ do `tao_nhiem_vu_thu.py` dựng, kể cả tiến độ và báo cáo | Có — khớp đúng danh sách tiêu đề |
 | `_khong_dung/` | — | Script cũ hoặc phá huỷ dữ liệu | **Không** — xem `_khong_dung/README.md` |
 
 ### Dựng lại toàn bộ dữ liệu demo
@@ -61,6 +62,27 @@ sqlplus -S TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @25_don_rac_kiem_thu.sql
 
 Script chỉ xoá nhiệm vụ trùng đúng tiêu đề mà bộ kiểm thử dùng **và** chưa từng có tiến độ hay
 báo cáo, nên không bao giờ chạm vào dữ liệu nghiệp vụ thật. Nó in danh sách trước khi xoá.
+
+### Dọn bộ nhiệm vụ dựng để thử tay
+
+`Tài liệu/cong_cu_kiem_thu/tao_nhiem_vu_thu.py` dựng 15 nhiệm vụ phủ hết vòng đời, các ca AI đoán
+phòng và các ca phân quyền, để thử tay trên giao diện. Bộ này cố ý đẩy nhiệm vụ đi hết vòng đời nên
+có tiến độ, báo cáo và điểm duyệt — script 25 không với tới vì nó cố tình tránh mọi việc có dữ liệu
+con. Dùng script 26:
+
+```bash
+export NLS_LANG=.AL32UTF8
+sqlplus -S TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @26_don_du_lieu_thu.sql
+```
+
+26 xoá cả `TASK_PROGRESS`, `TASK_REPORTS`, `TASK_ATTACHMENTS` của những nhiệm vụ đó, nên bù lại nó
+chặt hơn 25: chỉ khớp **đúng từng tiêu đề** trong danh sách cố định, không dùng `LIKE`. Danh sách
+đó phải trùng với `BO_THU` trong `tao_nhiem_vu_thu.py` — sửa một bên thì sửa cả bên kia.
+
+> **Không đánh dấu nhiệm vụ thử bằng tiền tố trong tiêu đề.** Đã thử `[THỬ] ` và phát hiện chính
+> mấy ký tự đó làm lệch kết quả AI: cùng nội dung, có tiền tố thì "Rà soát và cải thiện quy trình
+> nội bộ" nhảy từ LƯỠNG LỰ sang CHẮC CHẮN, vì tiêu đề là đầu vào của mô hình nhúng. Nhận diện bằng
+> danh sách tiêu đề, đừng chèn gì vào văn bản.
 
 ### Còn nợ: bước thu hẹp lược đồ
 
