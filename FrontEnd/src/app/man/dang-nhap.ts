@@ -9,33 +9,41 @@ import { AuthService } from '../core/api.service';
   imports: [FormsModule],
   template: `
     <div class="khung-dang-nhap">
-      <!-- Cột trái chỉ hiện trên màn rộng: nói đề tài là gì trước khi người ta đăng nhập. -->
-      <aside class="gioi-thieu">
-        <div class="dau">NV</div>
-        <h2>Phân hệ Giao nhiệm vụ</h2>
-        <p>Tích hợp AI hỗ trợ gợi ý người thực hiện phù hợp</p>
-        <ul>
-          <li><span>1</span> AI đoán nhiệm vụ thuộc phòng nào</li>
-          <li><span>2</span> Xếp hạng ứng viên theo bảy tiêu chí</li>
-          <li><span>3</span> Giải thích lý do từng gợi ý</li>
-        </ul>
-      </aside>
+      <div class="hat"></div>
 
-      <form class="the" (ngSubmit)="dangNhap()">
-        <h1>Đăng nhập</h1>
-        <p class="phu">Dùng tài khoản được cấp để vào hệ thống</p>
+      <form class="cua-so" (ngSubmit)="dangNhap()">
+        <!-- Dấu hiệu nhận diện vẽ bằng SVG: ba vạch dài ngắn khác nhau, vạch đầu
+             được tô đậm — gợi đúng ý "danh sách nhiệm vụ có ưu tiên". Chữ viết tắt
+             nhét trong ô vuông trông như bản nháp. -->
+        <svg class="dau" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="url(#g)" />
+          <rect x="8" y="10" width="16" height="2.6" rx="1.3" fill="#fff" />
+          <rect x="8" y="15" width="11" height="2.6" rx="1.3" fill="#fff" opacity=".62" />
+          <rect x="8" y="20" width="7" height="2.6" rx="1.3" fill="#fff" opacity=".34" />
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3b82f6" />
+              <stop offset="1" stop-color="#1d4ed8" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div class="tieu-de">
+          <h1>Quản lý nhiệm vụ</h1>
+          <p>Đăng nhập để tiếp tục</p>
+        </div>
 
         @if (loi()) {
           <div class="bao-loi">{{ loi() }}</div>
         }
 
         <label>
-          Tên đăng nhập
+          <span>Tên đăng nhập</span>
           <input name="username" [(ngModel)]="username" autocomplete="username" required />
         </label>
 
         <label>
-          Mật khẩu
+          <span>Mật khẩu</span>
           <input
             name="password"
             type="password"
@@ -45,180 +53,185 @@ import { AuthService } from '../core/api.service';
           />
         </label>
 
-        <button type="submit" class="nut-chinh" [disabled]="dangGui()">
+        <button type="submit" class="nut-vao" [disabled]="dangGui()">
           {{ dangGui() ? 'Đang đăng nhập…' : 'Đăng nhập' }}
         </button>
 
-        <div class="goi-y">
-          <strong>Tài khoản demo</strong> — mật khẩu chung <code>123456</code>
-          <div class="luoi">
-            @for (tk of taiKhoanDemo; track tk.ten) {
-              <button type="button" class="nho" (click)="dienNhanh(tk.ten)">
-                <strong>{{ tk.ten }}</strong>
-                <span>{{ tk.moTa }}</span>
-              </button>
-            }
-          </div>
+        <!-- Tài khoản demo thu về một hàng chip nhỏ. Bốn nút to như trước chiếm mất
+             nửa thẻ và kéo sự chú ý khỏi hai ô nhập. -->
+        <div class="demo">
+          <span class="nhan-demo">Demo</span>
+          @for (tk of taiKhoanDemo; track tk.ten) {
+            <button type="button" [title]="tk.moTa" (click)="dienNhanh(tk.ten)">
+              {{ tk.ten }}
+            </button>
+          }
         </div>
       </form>
     </div>
   `,
   styles: [
     `
-      /* Nền tối có hai quầng sáng mờ, để thẻ trắng nổi hẳn lên. Không dùng ảnh nên
-         không tốn thêm request nào. */
+      /* Nền: một nguồn sáng duy nhất hắt từ trên trái xuống nền xanh rất tối. Bản
+         trước dùng hai quầng màu xanh lam và lục lam chọi nhau — đúng kiểu mẫu có
+         sẵn, nhìn rẻ. Một nguồn sáng thì giống ánh sáng thật hơn. */
       .khung-dang-nhap {
+        position: relative;
         min-height: 100vh;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 400px;
-        align-items: center;
-        justify-content: center;
-        gap: 72px;
-        padding: 40px;
+        place-items: center;
+        padding: 24px;
+        overflow: hidden;
         background:
-          radial-gradient(900px 500px at 12% 18%, rgb(37 99 235 / 22%), transparent 60%),
-          radial-gradient(700px 500px at 88% 88%, rgb(8 145 178 / 18%), transparent 60%),
-          linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+          radial-gradient(1200px 760px at 18% -10%, #1e3a8a 0%, transparent 58%),
+          linear-gradient(168deg, #0b1220 0%, #0f172a 52%, #0b1220 100%);
       }
 
-      .gioi-thieu {
-        color: #e2e8f0;
-        max-width: 460px;
-        justify-self: end;
-      }
-      .gioi-thieu .dau {
-        display: grid;
-        place-items: center;
-        width: 46px;
-        height: 46px;
-        border-radius: 13px;
-        background: var(--chinh);
-        color: #fff;
-        font-weight: 700;
-        font-size: 16px;
-        box-shadow: 0 6px 20px rgb(37 99 235 / 50%);
-        margin-bottom: 22px;
-      }
-      .gioi-thieu h2 {
-        color: #fff;
-        font-size: 30px;
-        margin: 0 0 10px;
-        letter-spacing: -0.025em;
-      }
-      .gioi-thieu > p {
-        color: #94a3b8;
-        font-size: 15px;
-        margin: 0 0 28px;
-      }
-      .gioi-thieu ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 13px;
-      }
-      .gioi-thieu li {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        font-size: 14px;
-        color: #cbd5e1;
-      }
-      .gioi-thieu li span {
-        display: grid;
-        place-items: center;
-        flex: none;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: rgb(255 255 255 / 8%);
-        border: 1px solid rgb(255 255 255 / 14%);
-        font-size: 12px;
-        font-weight: 600;
-        color: #fff;
+      /* Lớp hạt nhiễu rất mờ phủ lên trên. Đây là chi tiết tạo khác biệt lớn nhất:
+         gradient phẳng luôn bị kẻ sọc trên màn 8 bit và trông như đồ hoạ máy tính,
+         thêm hạt vào là hết sọc và có cảm giác vật liệu. */
+      .hat {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.4;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
       }
 
-      .the {
-        padding: 34px;
-        border-radius: var(--bo-lon);
-        box-shadow: var(--bong-noi);
-        border: 0;
+      .cua-so {
+        position: relative;
         width: 100%;
+        max-width: 372px;
+        background: var(--mat);
+        border-radius: 18px;
+        padding: 36px 34px 30px;
         display: grid;
-        gap: 15px;
+        gap: 14px;
+        /* Bốn lớp: viền tóc sáng ở mép trên cho cảm giác được chiếu sáng từ trên,
+           một bóng sát để tạo mép, hai bóng loe rộng dần cho độ sâu. */
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / 90%),
+          0 1px 2px rgb(2 6 23 / 30%),
+          0 12px 28px rgb(2 6 23 / 26%),
+          0 40px 80px rgb(2 6 23 / 34%);
+      }
+
+      .dau {
+        width: 32px;
+        height: 32px;
+        filter: drop-shadow(0 3px 8px rgb(37 99 235 / 40%));
+      }
+
+      .tieu-de {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 4px;
       }
       h1 {
         margin: 0;
-        font-size: 23px;
+        font-size: 21px;
+        font-weight: 650;
+        letter-spacing: -0.025em;
       }
-      .phu {
-        margin: -9px 0 6px;
-        font-size: 13.5px;
+      .tieu-de p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--chu-nhat);
       }
+
       label {
         display: grid;
-        gap: 6px;
-        font-size: 13px;
-        font-weight: 550;
+        gap: 7px;
+      }
+      label span {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
         color: var(--chu-vua);
       }
-      button[type='submit'] {
-        padding: 11px;
-        font-size: 15px;
-        margin-top: 4px;
+      /* Ô nhập hơi ngả xám khi nghỉ, trắng hẳn khi đang gõ — người dùng biết ngay
+         con trỏ đang ở đâu mà không cần viền đậm. */
+      .cua-so input {
+        height: 42px;
+        padding: 0 13px;
+        border: 1px solid var(--vien);
+        border-radius: 10px;
+        background: #fafbfc;
+        font-size: 14px;
+      }
+      .cua-so input:hover:not(:focus) {
+        background: var(--mat);
+        border-color: var(--vien-dam);
+      }
+      .cua-so input:focus {
+        background: var(--mat);
       }
 
-      .goi-y {
-        border-top: 1px solid var(--vien);
-        padding-top: 16px;
-        font-size: 12.5px;
-        color: var(--chu-nhat);
-      }
-      .luoi {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-top: 10px;
-      }
-      /* Nút điền nhanh: bấm là đổ sẵn tài khoản, đỡ phải gõ khi demo. */
-      .nho {
-        display: grid;
-        gap: 1px;
-        text-align: left;
-        line-height: 1.35;
-        padding: 8px 10px;
-        background: var(--nen-diu);
-        border-radius: var(--bo-nho);
-      }
-      .nho strong {
-        color: var(--chu);
-        font-size: 12.5px;
+      .nut-vao {
+        height: 42px;
+        margin-top: 6px;
+        border: 0;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
         font-weight: 600;
+        letter-spacing: 0.01em;
+        background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / 26%),
+          0 1px 2px rgb(29 78 216 / 40%),
+          0 6px 16px rgb(37 99 235 / 32%);
       }
-      .nho span {
+      .nut-vao:hover:not(:disabled) {
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+      }
+      .nut-vao:disabled {
+        background: var(--vien-dam);
+        box-shadow: none;
+        opacity: 1;
+      }
+
+      /* Hàng chip demo: chữ nhỏ, độ tương phản thấp, nằm yên cho tới khi rê chuột. */
+      .demo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        border-top: 1px solid var(--vien);
+        margin-top: 4px;
+        padding-top: 14px;
+      }
+      .nhan-demo {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--chu-mo);
+        margin-right: 2px;
+      }
+      .demo button {
+        padding: 3px 9px;
+        border-radius: 99px;
+        border: 1px solid var(--vien);
+        background: var(--nen-diu);
         color: var(--chu-nhat);
         font-size: 11.5px;
+        font-weight: 500;
+        font-family: 'JetBrains Mono', Consolas, monospace;
       }
-      .nho:hover {
+      .demo button:hover {
         background: var(--chinh-nhat);
         border-color: var(--chinh-vien);
+        color: var(--chinh-dam);
       }
 
-      @media (max-width: 980px) {
-        .khung-dang-nhap {
-          grid-template-columns: minmax(0, 400px);
-          justify-content: center;
-          gap: 32px;
-          padding: 28px 18px;
-        }
-        .gioi-thieu {
-          justify-self: stretch;
-        }
-        .gioi-thieu ul {
-          display: none;
-        }
-        .gioi-thieu h2 {
-          font-size: 24px;
+      .bao-loi {
+        font-size: 12.5px;
+      }
+
+      @media (max-width: 420px) {
+        .cua-so {
+          padding: 28px 22px 24px;
         }
       }
     `,
