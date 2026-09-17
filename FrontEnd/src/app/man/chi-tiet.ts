@@ -236,31 +236,37 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
         gap: 16px;
       }
       h1 {
-        margin: 8px 0 0;
-        font-size: 21px;
+        margin: 9px 0 0;
+        font-size: 23px;
       }
       h2 {
-        margin: 0 0 10px;
-        font-size: 15px;
-        color: #334155;
+        margin: 0 0 13px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--chu-nhat);
       }
       .the-trang-thai {
-        color: #fff;
-        padding: 3px 10px;
-        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 99px;
         font-size: 12px;
+        font-weight: 600;
+        color: #fff;
       }
       .hai-cot {
         display: grid;
         grid-template-columns: 1fr 400px;
-        gap: 16px;
+        gap: 20px;
         align-items: start;
       }
-      @media (max-width: 980px) {
+      @media (max-width: 1040px) {
         .hai-cot {
           grid-template-columns: 1fr;
         }
@@ -271,177 +277,176 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         gap: 16px;
       }
       .the {
-        background: #fff;
-        padding: 18px;
-        border-radius: 10px;
-        box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+        padding: 20px;
       }
       .mo-ta {
-        margin: 0 0 14px;
-        color: #334155;
-        line-height: 1.6;
         white-space: pre-wrap;
+        line-height: 1.7;
+        color: var(--chu-vua);
+        margin: 0 0 18px;
       }
+
+      /* Danh sach thuoc tinh: nhan xam nhat ben trai, gia tri dam ben phai. */
       dl {
         display: grid;
-        grid-template-columns: 130px 1fr;
-        gap: 8px 12px;
+        grid-template-columns: 150px 1fr;
+        gap: 10px 16px;
         margin: 0;
-        font-size: 14px;
+        font-size: 13.5px;
       }
       dt {
-        color: #64748b;
+        color: var(--chu-nhat);
       }
       dd {
         margin: 0;
-        color: #0f172a;
-      }
-      .qua-han {
-        color: #dc2626;
+        color: var(--chu);
         font-weight: 500;
       }
+      .qua-han {
+        color: var(--do);
+        font-weight: 600;
+      }
+
       .hanh-dong {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         align-items: center;
+        flex-wrap: wrap;
       }
       .hanh-dong.doc {
         display: grid;
-        gap: 8px;
+        gap: 11px;
       }
       .hang {
         display: flex;
-        gap: 8px;
+        gap: 10px;
+        align-items: flex-end;
       }
       .hang button {
         flex: 1;
       }
-      select,
-      textarea,
       input[type='range'] {
-        padding: 8px 10px;
-        border: 1px solid #cbd5e1;
-        border-radius: 7px;
-        font-size: 14px;
-        font-family: inherit;
         width: 100%;
-      }
-      input[type='range'] {
-        padding: 0;
+        accent-color: var(--chinh);
+        cursor: pointer;
       }
       label {
         display: grid;
-        gap: 6px;
-        font-size: 14px;
-        color: #334155;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 550;
+        color: var(--chu-vua);
       }
-      button {
-        padding: 9px 14px;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        border-radius: 7px;
-        cursor: pointer;
-        font-size: 14px;
-      }
-      .nut-chinh {
-        background: #2563eb;
-        color: #fff;
-        border-color: #2563eb;
-      }
-      .nut-dat {
-        background: #16a34a;
-        color: #fff;
-        border-color: #16a34a;
-      }
-      .nut-tu-choi {
-        background: #fff;
-        color: #dc2626;
-        border-color: #dc2626;
-      }
-      .phu-nhat {
-        white-space: nowrap;
-      }
-      button:disabled {
-        opacity: 0.5;
-        cursor: default;
-      }
-      .muc {
-        border-top: 1px solid #f1f5f9;
-        padding: 10px 0;
-      }
-      .muc:first-of-type {
-        border-top: 0;
-      }
-      .hang-muc {
+      .cham-diem {
         display: flex;
-        gap: 8px;
-        align-items: baseline;
-        flex-wrap: wrap;
-      }
-      .muc p {
-        margin: 5px 0 0;
-        font-size: 13.5px;
-        color: #334155;
-        line-height: 1.55;
+        gap: 12px;
       }
       .cham-diem label {
         flex: 1;
       }
+      .nut-dat {
+        background: var(--xanh);
+        border-color: var(--xanh);
+        color: #fff;
+        font-weight: 600;
+      }
+      .nut-dat:hover:not(:disabled) {
+        background: #15803d;
+        border-color: #15803d;
+      }
+      .nut-tu-choi {
+        background: var(--mat);
+        border-color: #fca5a5;
+        color: var(--do);
+        font-weight: 600;
+      }
+      .nut-tu-choi:hover:not(:disabled) {
+        background: var(--do-nhat);
+        border-color: var(--do);
+      }
+
+      /* Dong thoi gian: moi muc mot vach doc ben trai. */
+      .muc {
+        border-top: 1px solid var(--vien);
+        padding: 13px 0 0 14px;
+        margin-top: 13px;
+        position: relative;
+      }
+      .muc::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 15px;
+        bottom: 2px;
+        width: 2px;
+        border-radius: 99px;
+        background: var(--vien);
+      }
+      .muc:first-of-type {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      .muc:first-of-type::before {
+        top: 3px;
+      }
+      .hang-muc {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+        margin-bottom: 5px;
+      }
+      .hang-muc strong {
+        color: var(--chinh);
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .muc p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--chu-vua);
+        line-height: 1.65;
+      }
       .diem-bc {
+        margin-top: 7px !important;
         font-size: 12.5px !important;
-        color: #0f172a !important;
-        font-weight: 500;
+        color: var(--chu-nhat) !important;
+        background: var(--nen-diu);
+        border: 1px solid var(--vien);
+        border-radius: var(--bo-nho);
+        padding: 7px 11px;
       }
       .y-kien {
-        background: #f8fafc;
-        padding: 8px 10px;
-        border-radius: 6px;
-        border-left: 3px solid #cbd5e1;
+        margin-top: 7px !important;
+        font-size: 12.5px !important;
+        background: var(--chinh-nhat);
+        border-left: 3px solid var(--chinh-vien);
+        border-radius: 0 var(--bo-nho) var(--bo-nho) 0;
+        padding: 8px 11px;
       }
+
       .nhan {
-        background: #fef3c7;
+        background: var(--cam-nhat);
         color: #92400e;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 11.5px;
+        border: 1px solid #fde68a;
       }
       .nhan.dat {
-        background: #dcfce7;
+        background: var(--xanh-nhat);
         color: #166534;
+        border-color: #bbf7d0;
       }
       .nhan.tu-choi {
-        background: #fee2e2;
-        color: #991b1b;
+        background: var(--do-nhat);
+        color: #b91c1c;
+        border-color: #fecaca;
       }
       .mo {
-        color: #64748b;
-        font-size: 13.5px;
-        margin: 0;
+        color: var(--chu-nhat);
+        font-size: 13px;
       }
       .nho {
-        font-size: 12px;
-        margin-left: auto;
-      }
-      .bao-loi {
-        background: #fef2f2;
-        color: #b91c1c;
-        padding: 11px 14px;
-        border-radius: 8px;
-        margin-bottom: 14px;
-        font-size: 14px;
-      }
-      .bao-ok {
-        background: #f0fdf4;
-        color: #166534;
-        padding: 11px 14px;
-        border-radius: 8px;
-        margin-bottom: 14px;
-        font-size: 14px;
-      }
-      .trong {
-        text-align: center;
-        color: #64748b;
-        padding: 40px;
+        font-size: 11.5px;
       }
     `,
   ],

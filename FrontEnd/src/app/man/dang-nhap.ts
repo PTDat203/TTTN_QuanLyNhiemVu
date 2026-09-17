@@ -9,9 +9,21 @@ import { AuthService } from '../core/api.service';
   imports: [FormsModule],
   template: `
     <div class="khung-dang-nhap">
+      <!-- Cột trái chỉ hiện trên màn rộng: nói đề tài là gì trước khi người ta đăng nhập. -->
+      <aside class="gioi-thieu">
+        <div class="dau">NV</div>
+        <h2>Phân hệ Giao nhiệm vụ</h2>
+        <p>Tích hợp AI hỗ trợ gợi ý người thực hiện phù hợp</p>
+        <ul>
+          <li><span>1</span> AI đoán nhiệm vụ thuộc phòng nào</li>
+          <li><span>2</span> Xếp hạng ứng viên theo bảy tiêu chí</li>
+          <li><span>3</span> Giải thích lý do từng gợi ý</li>
+        </ul>
+      </aside>
+
       <form class="the" (ngSubmit)="dangNhap()">
-        <h1>Quản lý nhiệm vụ</h1>
-        <p class="phu">Đăng nhập để tiếp tục</p>
+        <h1>Đăng nhập</h1>
+        <p class="phu">Dùng tài khoản được cấp để vào hệ thống</p>
 
         @if (loi()) {
           <div class="bao-loi">{{ loi() }}</div>
@@ -33,7 +45,7 @@ import { AuthService } from '../core/api.service';
           />
         </label>
 
-        <button type="submit" [disabled]="dangGui()">
+        <button type="submit" class="nut-chinh" [disabled]="dangGui()">
           {{ dangGui() ? 'Đang đăng nhập…' : 'Đăng nhập' }}
         </button>
 
@@ -42,7 +54,8 @@ import { AuthService } from '../core/api.service';
           <div class="luoi">
             @for (tk of taiKhoanDemo; track tk.ten) {
               <button type="button" class="nho" (click)="dienNhanh(tk.ten)">
-                <strong>{{ tk.ten }}</strong><br />{{ tk.moTa }}
+                <strong>{{ tk.ten }}</strong>
+                <span>{{ tk.moTa }}</span>
               </button>
             }
           </div>
@@ -52,94 +65,161 @@ import { AuthService } from '../core/api.service';
   `,
   styles: [
     `
+      /* Nền tối có hai quầng sáng mờ, để thẻ trắng nổi hẳn lên. Không dùng ảnh nên
+         không tốn thêm request nào. */
       .khung-dang-nhap {
         min-height: 100vh;
         display: grid;
-        place-items: center;
-        background: #f1f5f9;
-        padding: 16px;
+        grid-template-columns: minmax(0, 1fr) 400px;
+        align-items: center;
+        justify-content: center;
+        gap: 72px;
+        padding: 40px;
+        background:
+          radial-gradient(900px 500px at 12% 18%, rgb(37 99 235 / 22%), transparent 60%),
+          radial-gradient(700px 500px at 88% 88%, rgb(8 145 178 / 18%), transparent 60%),
+          linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
       }
-      .the {
-        background: #fff;
-        padding: 32px;
-        border-radius: 12px;
-        box-shadow: 0 4px 24px rgb(0 0 0 / 8%);
-        width: 100%;
-        max-width: 380px;
+
+      .gioi-thieu {
+        color: #e2e8f0;
+        max-width: 460px;
+        justify-self: end;
+      }
+      .gioi-thieu .dau {
         display: grid;
-        gap: 14px;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: var(--chinh);
+        color: #fff;
+        font-weight: 700;
+        font-size: 16px;
+        box-shadow: 0 6px 20px rgb(37 99 235 / 50%);
+        margin-bottom: 22px;
+      }
+      .gioi-thieu h2 {
+        color: #fff;
+        font-size: 30px;
+        margin: 0 0 10px;
+        letter-spacing: -0.025em;
+      }
+      .gioi-thieu > p {
+        color: #94a3b8;
+        font-size: 15px;
+        margin: 0 0 28px;
+      }
+      .gioi-thieu ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 13px;
+      }
+      .gioi-thieu li {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        font-size: 14px;
+        color: #cbd5e1;
+      }
+      .gioi-thieu li span {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgb(255 255 255 / 8%);
+        border: 1px solid rgb(255 255 255 / 14%);
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .the {
+        padding: 34px;
+        border-radius: var(--bo-lon);
+        box-shadow: var(--bong-noi);
+        border: 0;
+        width: 100%;
+        display: grid;
+        gap: 15px;
       }
       h1 {
         margin: 0;
-        font-size: 22px;
-        color: #0f172a;
+        font-size: 23px;
       }
       .phu {
-        margin: -8px 0 4px;
-        color: #64748b;
-        font-size: 14px;
+        margin: -9px 0 6px;
+        font-size: 13.5px;
       }
       label {
         display: grid;
         gap: 6px;
-        font-size: 14px;
-        color: #334155;
-      }
-      input {
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 15px;
-      }
-      input:focus {
-        outline: 2px solid #2563eb;
-        border-color: transparent;
+        font-size: 13px;
+        font-weight: 550;
+        color: var(--chu-vua);
       }
       button[type='submit'] {
         padding: 11px;
-        background: #2563eb;
-        color: #fff;
-        border: 0;
-        border-radius: 8px;
         font-size: 15px;
-        cursor: pointer;
+        margin-top: 4px;
       }
-      button[type='submit']:disabled {
-        background: #94a3b8;
-        cursor: default;
-      }
-      .bao-loi {
-        background: #fef2f2;
-        color: #b91c1c;
-        padding: 10px 12px;
-        border-radius: 8px;
-        font-size: 14px;
-      }
+
       .goi-y {
-        border-top: 1px solid #e2e8f0;
-        padding-top: 14px;
-        font-size: 13px;
-        color: #64748b;
+        border-top: 1px solid var(--vien);
+        padding-top: 16px;
+        font-size: 12.5px;
+        color: var(--chu-nhat);
       }
       .luoi {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
+      /* Nút điền nhanh: bấm là đổ sẵn tài khoản, đỡ phải gõ khi demo. */
       .nho {
-        line-height: 1.4;
-        padding: 7px;
-        font-size: 12px;
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
-        border-radius: 6px;
-        cursor: pointer;
+        display: grid;
+        gap: 1px;
+        text-align: left;
+        line-height: 1.35;
+        padding: 8px 10px;
+        background: var(--nen-diu);
+        border-radius: var(--bo-nho);
       }
-      code {
-        background: #f1f5f9;
-        padding: 1px 5px;
-        border-radius: 4px;
+      .nho strong {
+        color: var(--chu);
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .nho span {
+        color: var(--chu-nhat);
+        font-size: 11.5px;
+      }
+      .nho:hover {
+        background: var(--chinh-nhat);
+        border-color: var(--chinh-vien);
+      }
+
+      @media (max-width: 980px) {
+        .khung-dang-nhap {
+          grid-template-columns: minmax(0, 400px);
+          justify-content: center;
+          gap: 32px;
+          padding: 28px 18px;
+        }
+        .gioi-thieu {
+          justify-self: stretch;
+        }
+        .gioi-thieu ul {
+          display: none;
+        }
+        .gioi-thieu h2 {
+          font-size: 24px;
+        }
       }
     `,
   ],

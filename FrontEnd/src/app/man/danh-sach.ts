@@ -29,7 +29,7 @@ import {
       }
     </div>
 
-    <div class="bo-loc">
+    <div class="bo-loc the">
       <input
         placeholder="Tìm theo tiêu đề…"
         [(ngModel)]="loc.tuKhoa"
@@ -64,6 +64,7 @@ import {
     } @else if (!ketQua() || ketQua()!.tongSoDong === 0) {
       <p class="trong">Không có nhiệm vụ nào khớp điều kiện lọc.</p>
     } @else {
+      <div class="khung-bang the">
       <table>
         <thead>
           <tr>
@@ -83,7 +84,9 @@ import {
             <tr (click)="moChiTiet(nv.id)">
               <td class="tieu-de">{{ nv.title }}</td>
               <td>
-                <span class="the-trang-thai" [style.background]="mauTrangThai(nv)">
+                <span class="nhan" [style.color]="mauTrangThai(nv)"
+                      [style.background]="mauTrangThai(nv) + '18'">
+                  <i class="dot" [style.background]="mauTrangThai(nv)"></i>
                   {{ nv.tenTrangThai }}
                 </span>
               </td>
@@ -121,6 +124,7 @@ import {
           }
         </tbody>
       </table>
+      </div>
 
       <div class="phan-trang">
         <button [disabled]="!ketQua()!.coTrangTruoc" (click)="tai(ketQua()!.trangHienTai - 1)">
@@ -142,126 +146,137 @@ import {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 18px;
+        gap: 16px;
+        margin-bottom: 20px;
       }
       h1 {
         margin: 0;
-        font-size: 22px;
+        font-size: 24px;
       }
       .phu {
-        margin: 4px 0 0;
-        color: #64748b;
-        font-size: 14px;
+        margin: 3px 0 0;
+        font-size: 13.5px;
       }
-      .nut-chinh {
-        background: #2563eb;
-        color: #fff;
-        padding: 9px 16px;
-        border-radius: 8px;
+      a.nut-chinh {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 17px;
+        border-radius: var(--bo-nho);
         text-decoration: none;
         font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
       }
+      a.nut-chinh:hover {
+        background: var(--chinh-dam);
+      }
+
       .bo-loc {
         display: flex;
-        gap: 8px;
+        gap: 9px;
         flex-wrap: wrap;
-        margin-bottom: 16px;
         align-items: center;
-      }
-      .bo-loc input[type='text'],
-      .bo-loc input:not([type]),
-      .bo-loc select {
-        padding: 8px 10px;
-        border: 1px solid #cbd5e1;
-        border-radius: 7px;
-        font-size: 14px;
+        margin-bottom: 16px;
+        padding: 13px 15px;
       }
       .bo-loc input:not([type]) {
-        min-width: 220px;
+        min-width: 230px;
+        flex: 1 1 230px;
       }
-      .bo-loc button {
-        padding: 8px 14px;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        border-radius: 7px;
-        cursor: pointer;
-        font-size: 14px;
-      }
-      .phu-nhat {
-        color: #64748b;
+      .bo-loc select {
+        width: auto;
+        min-width: 158px;
       }
       .o-tick {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 14px;
-        color: #334155;
+        gap: 7px;
+        font-size: 13.5px;
+        color: var(--chu-vua);
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .o-tick input {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--chinh);
+        cursor: pointer;
+      }
+
+      /* overflow: hidden để bốn góc bo của thẻ cắt gọn được bảng bên trong;
+         overflow-x: auto để bảng nhiều cột cuộn ngang thay vì phá vỡ bố cục. */
+      .khung-bang {
+        overflow: hidden;
       }
       table {
         width: 100%;
         border-collapse: collapse;
-        background: #fff;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
       }
       th {
         text-align: left;
-        padding: 11px 14px;
-        background: #f8fafc;
-        font-size: 13px;
-        color: #475569;
-        border-bottom: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        background: var(--nen-diu);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--chu-nhat);
+        border-bottom: 1px solid var(--vien);
+        white-space: nowrap;
       }
       td {
-        padding: 12px 14px;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 14px;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--nen);
+        font-size: 13.5px;
+        color: var(--chu-vua);
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
       }
       tbody tr {
         cursor: pointer;
+        transition: background var(--chuyen);
       }
       tbody tr:hover {
-        background: #f8fafc;
+        background: var(--chinh-nhat);
       }
       .tieu-de {
-        font-weight: 500;
+        font-weight: 550;
+        color: var(--chu);
         max-width: 340px;
       }
-      .the-trang-thai {
-        color: #fff;
-        padding: 3px 9px;
-        border-radius: 20px;
-        font-size: 12px;
-        white-space: nowrap;
+      .nhan .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex: none;
       }
       .cham {
         display: inline-block;
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        margin-right: 6px;
+        margin-right: 7px;
+        vertical-align: 1px;
       }
       .qua-han {
-        color: #dc2626;
-        font-weight: 500;
+        color: var(--do);
+        font-weight: 600;
       }
       .phong {
-        color: #475569;
-        font-size: 13px;
-      }
-      .mo {
-        color: #94a3b8;
+        color: var(--chu-nhat);
+        font-size: 12.5px;
       }
       small {
-        color: #64748b;
+        color: var(--chu-mo);
         margin-left: 4px;
+        font-size: 11.5px;
       }
       .thanh {
-        width: 70px;
+        width: 74px;
         height: 6px;
-        background: #e2e8f0;
-        border-radius: 4px;
+        background: var(--vien);
+        border-radius: 99px;
         overflow: hidden;
         display: inline-block;
         vertical-align: middle;
@@ -269,34 +284,36 @@ import {
       .thanh i {
         display: block;
         height: 100%;
-        background: #0891b2;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--lam), #22d3ee);
       }
+
+      .trong {
+        text-align: center;
+        padding: 56px 20px;
+        color: var(--chu-nhat);
+        background: var(--mat);
+        border: 1px dashed var(--vien-dam);
+        border-radius: var(--bo);
+      }
+
       .phan-trang {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 16px;
         margin-top: 18px;
-        font-size: 14px;
-        color: #475569;
+        font-size: 13.5px;
+        color: var(--chu-nhat);
       }
-      .phan-trang button {
-        padding: 7px 14px;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        border-radius: 7px;
-        cursor: pointer;
-      }
-      .phan-trang button:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-      .trong {
-        text-align: center;
-        color: #64748b;
-        padding: 40px;
-        background: #fff;
-        border-radius: 10px;
+
+      @media (max-width: 760px) {
+        .dau-trang {
+          flex-direction: column;
+        }
+        .khung-bang {
+          overflow-x: auto;
+        }
       }
     `,
   ],
