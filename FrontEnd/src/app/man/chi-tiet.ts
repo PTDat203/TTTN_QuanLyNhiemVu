@@ -3,8 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AuthService, NhiemVuService } from '../core/api.service';
-import { MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, NhiemVuCon } from '../core/models';
+import { AuthService, GoiYService, NhiemVuService } from '../core/api.service';
+import {
+  GoiYResponse, MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, NhiemVuCon, UngVien,
+} from '../core/models';
 
 @Component({
   selector: 'app-chi-tiet',
@@ -172,6 +174,56 @@ import { MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, Nhie
                     <input type="date" [(ngModel)]="gtHan" />
                   </label>
                 </div>
+
+                <!-- Gợi ý ngay tại chỗ. Phòng đã do nhiệm vụ cha quyết định nên AI bỏ hẳn
+                     bước đoán phòng, chấm thẳng từng người trong phạm vi giao việc của mình. -->
+                <div class="hang-goi-y">
+                  <button class="phu-nhat" [disabled]="dangGoiY() || !gtTieuDe.trim()"
+                          (click)="xinGoiY()">
+                    {{ dangGoiY() ? 'Đang tính…' : 'Gợi ý người phù hợp' }}
+                  </button>
+                  @if (goiY(); as kq) {
+                    <small>
+                      {{ kq.phuongPhap }} · xét {{ kq.soUngVienDaXet }} người · {{ kq.thoiGianMs }}ms
+                    </small>
+                  }
+                </div>
+
+                @if (goiY(); as kq) {
+                  @if (kq.phamViMoTa) {
+                    <p class="pham-vi">{{ kq.phamViMoTa }}</p>
+                  }
+
+                  @for (c of kq.canhBao; track c) {
+                    <div class="canh-bao-ai">{{ c }}</div>
+                  }
+
+                  @if (kq.kyNangYeuCau.length) {
+                    <div class="ky-nang">
+                      <span class="nho mo">Kỹ năng cần:</span>
+                      @for (k of kq.kyNangYeuCau; track k.skillId) {
+                        <span class="chip">{{ k.ten }}</span>
+                      }
+                    </div>
+                  }
+
+                  <div class="ds-ung-vien">
+                    @for (uv of kq.ungVien; track uv.userId) {
+                      <button class="the-ung-vien" [class.duoc-chon]="gtNguoiNhanId === uv.userId"
+                              [title]="uv.lyDo.join('\n')" (click)="chonUngVien(uv)">
+                        <span class="hang-so">{{ uv.thuHang }}</span>
+                        <span class="khoi-ten">
+                          <strong>{{ uv.fullName }}</strong>
+                          <small>{{ uv.chucDanh }}{{ uv.tenNhom ? ' · ' + uv.tenNhom : '' }}</small>
+                          <small class="ly-do-goi">{{ uv.lyDo[0] }}</small>
+                        </span>
+                        <span class="diem-uv">{{ (uv.diem * 100).toFixed(0) }}</span>
+                      </button>
+                    }
+                  </div>
+
+                  <p class="nho mo">AI chỉ đề xuất. Quyết định giao việc vẫn thuộc về bạn.</p>
+                }
 
                 <div class="hang">
                   <button class="phu-nhat" (click)="dongKhung()">Huỷ bỏ</button>
@@ -656,6 +708,104 @@ import { MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, Nhie
           grid-template-columns: 1fr;
         }
       }
+      .hang-goi-y {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .hang-goi-y small {
+        color: var(--chu-nhat);
+        font-size: 11.5px;
+      }
+      .pham-vi {
+        margin: 0;
+        font-size: 12px;
+        color: var(--chu-nhat);
+        line-height: 1.55;
+      }
+      .canh-bao-ai {
+        font-size: 12px;
+        line-height: 1.55;
+        color: #92400e;
+        background: #fffbeb;
+        border-left: 3px solid #f59e0b;
+        border-radius: 0 var(--bo-nho) var(--bo-nho) 0;
+        padding: 8px 11px;
+      }
+      .ky-nang {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+      .chip {
+        font-size: 11.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--chinh-nhat);
+        color: var(--chinh);
+      }
+      .ds-ung-vien {
+        display: grid;
+        gap: 6px;
+      }
+      /* Cả thẻ là một nút: bấm đâu cũng chọn được người đó, không phải nhắm vào chữ "Chọn". */
+      .the-ung-vien {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        padding: 8px 10px;
+        background: var(--nen);
+        border: 1px solid var(--vien);
+        border-radius: var(--bo-nho);
+        cursor: pointer;
+      }
+      .the-ung-vien:hover {
+        border-color: var(--chinh-vien);
+      }
+      .the-ung-vien.duoc-chon {
+        border-color: var(--chinh);
+        background: var(--chinh-nhat);
+      }
+      .hang-so {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--chinh);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .khoi-ten {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: 1px;
+      }
+      .khoi-ten strong {
+        font-size: 13px;
+      }
+      .khoi-ten small {
+        font-size: 11.5px;
+        color: var(--chu-nhat);
+      }
+      .ly-do-goi {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .diem-uv {
+        flex: none;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--chinh);
+      }
+
       .nhac {
         margin: 0;
         font-size: 12.5px;
@@ -824,6 +974,7 @@ import { MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, Nhie
 })
 export class ChiTietComponent implements OnInit {
   private api = inject(NhiemVuService);
+  private goiYApi = inject(GoiYService);
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -853,6 +1004,9 @@ export class ChiTietComponent implements OnInit {
   gtNguoiNhanId: number | null = null;
   gtUuTien: MucUuTien = 'MEDIUM';
   gtHan = '';
+
+  readonly goiY = signal<GoiYResponse | null>(null);
+  readonly dangGoiY = signal(false);
   yKien = '';
   diemChatLuong: number | null = null;
   diemHoanThanh: number | null = null;
@@ -1038,8 +1192,43 @@ export class ChiTietComponent implements OnInit {
       this.gtHan = nv.dueDate ? nv.dueDate.slice(0, 10) : '';
     }
     this.gtNguoiNhanId = null;
+    this.goiY.set(null);
     this.khungMo.set('giao-tiep');
     this.loi.set('');
+  }
+
+  /**
+   * Xin gợi ý cho nhiệm vụ con sắp giao.
+   *
+   * <para>Gửi kèm id nhiệm vụ cha để backend biết phòng đã cố định: không đoán phòng nữa mà
+   * chấm thẳng trong số người mình giao được. Gửi theo tiêu đề/mô tả đang gõ chứ không theo
+   * id nhiệm vụ, nên sửa lại nội dung cho sát phần việc con thì gợi ý đổi theo.</para>
+   */
+  xinGoiY(): void {
+    this.dangGoiY.set(true);
+    this.loi.set('');
+
+    this.goiYApi
+      .goiY({
+        nhiemVuChaId: this.id,
+        title: this.gtTieuDe,
+        description: this.gtMoTa,
+        soLuong: 5,
+      })
+      .subscribe({
+        next: (kq) => {
+          this.goiY.set(kq);
+          this.dangGoiY.set(false);
+        },
+        error: (e: any) => {
+          this.loi.set(e?.error?.detail ?? 'Không lấy được gợi ý.');
+          this.dangGoiY.set(false);
+        },
+      });
+  }
+
+  chonUngVien(uv: UngVien): void {
+    this.gtNguoiNhanId = uv.userId;
   }
 
   giaoTiepXuong(): void {

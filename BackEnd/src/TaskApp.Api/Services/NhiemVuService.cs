@@ -51,13 +51,9 @@ public sealed class NhiemVuService
     public async Task<KetQuaPhanTrang<NhiemVuTomTatDto>> DanhSachAsync(
         NhiemVuLocRequest loc, long userId, CancellationToken ct = default)
     {
-        var viTri = await PhamViToChuc.NapAsync(_db, userId, ct);
-        if (viTri is null)
-        {
-            return KetQuaPhanTrang<NhiemVuTomTatDto>.Rong(loc.Trang, loc.KichThuocTrang);
-        }
-
-        var truyVan = _db.Tasks.AsNoTracking().ThayDuoc(viTri);
+        // Chỉ việc của chính mình. Nhiệm vụ con người khác giao tiếp xuống KHÔNG hiện ở đây —
+        // muốn theo dõi nhánh dưới thì mở việc gốc rồi xem khối "Chuỗi giao việc".
+        var truyVan = _db.Tasks.AsNoTracking().ViecCuaToi(userId);
 
         // --- Bộ lọc ---
         if (!string.IsNullOrWhiteSpace(loc.StatusCode))
@@ -513,15 +509,6 @@ public sealed class NhiemVuService
         }
     }
 
-    /// <summary>
-    /// Gắn người thực hiện, đồng thời gắn phòng thực thi và nhóm phụ trách theo người đó.
-    ///
-    /// <para>
-    /// Người làm thuộc phòng nào thì việc thuộc phòng đó — kể cả khi lúc tạo AI đã đoán
-    /// phòng khác, vì quyết định giao việc của con người mới là nhãn đúng. Phòng và nhóm lấy
-    /// cùng từ một người nên luôn thoả khoá ngoại ghép FK_TASKS_TEAM_DEPT.
-    /// </para>
-    /// </summary>
     // ------------------------------------------------------------------ tạm dừng / huỷ
 
     /// <summary>
@@ -765,6 +752,15 @@ public sealed class NhiemVuService
         nv.UpdatedAt = luc;
     }
 
+    /// <summary>
+    /// Gắn người thực hiện, đồng thời gắn phòng thực thi và nhóm phụ trách theo người đó.
+    ///
+    /// <para>
+    /// Người làm thuộc phòng nào thì việc thuộc phòng đó — kể cả khi lúc tạo AI đã đoán
+    /// phòng khác, vì quyết định giao việc của con người mới là nhãn đúng. Phòng và nhóm lấy
+    /// cùng từ một người nên luôn thoả khoá ngoại ghép FK_TASKS_TEAM_DEPT.
+    /// </para>
+    /// </summary>
     private static void GanNguoiThucHien(TaskItem nv, User nguoiNhan)
     {
         nv.AssigneeId = nguoiNhan.Id;

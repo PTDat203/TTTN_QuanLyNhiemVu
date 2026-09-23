@@ -13,6 +13,16 @@ public sealed class GoiYRequest
 {
     public long? TaskId { get; set; }
 
+    /// <summary>
+    /// Đang soạn một nhiệm vụ CON để giao tiếp xuống từ nhiệm vụ này.
+    ///
+    /// <para>
+    /// Có mặt thì AI bỏ hẳn bước đoán phòng: phòng đã do nhiệm vụ cha quyết định, chỉ cần xếp
+    /// hạng trong số người mình giao được. Người gọi phải là người đang nhận nhiệm vụ cha.
+    /// </para>
+    /// </summary>
+    public long? NhiemVuChaId { get; set; }
+
     public string? Title { get; set; }
     public string? Description { get; set; }
 
@@ -187,6 +197,12 @@ public sealed class GoiYResponse
 
     /// <summary>Số người thực sự được chấm, sau khi lọc theo phòng.</summary>
     public int SoUngVienDaXet { get; set; }
+
+    /// <summary>Phòng đã cố định sẵn nên tầng 1 không dùng để lọc — chỉ còn để tham khảo.</summary>
+    public bool PhongCoDinh { get; set; }
+
+    /// <summary>Câu mô tả tập ứng viên đã chấm. Rỗng khi chạy ở chế độ thường.</summary>
+    public string? PhamViMoTa { get; set; }
 
     public SuyLuanPhongBanDto SuyLuanPhongBan { get; set; } = new();
 

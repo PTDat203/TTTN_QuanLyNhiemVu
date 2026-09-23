@@ -33,17 +33,22 @@ public sealed record ViTriToChuc(long UserId, string VaiTro, long? DepartmentId,
 ///   <item>Nhân viên không giao cho ai.</item>
 /// </list>
 ///
-/// <para><b>Xem nhiệm vụ.</b> Ai cũng thấy việc mình tạo và việc giao cho mình. Thêm vào đó:</para>
+/// <para><b>Xem nhiệm vụ.</b> Hai mức, cố ý khác nhau:</para>
 /// <list type="bullet">
-///   <item>Giám đốc thấy mọi nhiệm vụ.</item>
-///   <item>Trưởng phòng thấy nhiệm vụ của phòng mình.</item>
-///   <item>Trưởng nhóm thấy nhiệm vụ của nhóm mình.</item>
+///   <item><see cref="ViecCuaToi"/> — việc mình tạo hoặc giao cho mình. Đây là DANH SÁCH.</item>
+///   <item><see cref="QuyenXemAsync"/> — thêm mọi mắt xích khác trong cùng chuỗi giao việc.
+///         Đây là quyền MỞ CHI TIẾT.</item>
 /// </list>
 /// <para>
-/// "Của phòng" tính theo phòng thực thi của nhiệm vụ, HOẶC phòng của người đang làm, HOẶC phòng
-/// của người tạo. Vế cuối để trưởng phòng thấy cả nhiệm vụ trưởng nhóm vừa tạo mà chưa giao ai —
-/// lúc đó nhiệm vụ chưa có phòng thực thi lẫn người làm. "Của nhóm" tính theo nhóm phụ trách
-/// hoặc nhóm của người đang làm.
+/// Trước đây giám đốc thấy mọi nhiệm vụ, trưởng phòng thấy cả phòng. Bỏ đi vì danh sách đầy
+/// những việc người xem không làm gì được: quyền tạm dừng thuộc về người giao, nên mở một việc
+/// của phòng khác ra chỉ để thấy không có nút nào bấm được.
+/// </para>
+/// <para>
+/// Mức thứ hai tồn tại vì khối "Chuỗi giao việc" ở màn chi tiết. Giám đốc giao xuống trưởng
+/// phòng, trưởng phòng giao tiếp xuống nhân viên: giám đốc cần mở được nhánh dưới để biết lệnh
+/// của mình đang nằm ở tay ai, còn nhân viên cần bấm ngược lên nhiệm vụ cha để biết việc này
+/// từ đâu ra. Hai chiều đều mở, nhưng chỉ trong phạm vi đúng một chuỗi.
 /// </para>
 ///
 /// <para>
@@ -82,40 +87,96 @@ public static class PhamViToChuc
         };
     }
 
-    /// <summary>Những nhiệm vụ mà <paramref name="nguoi"/> được xem.</summary>
-    public static IQueryable<TaskItem> ThayDuoc(this IQueryable<TaskItem> q, ViTriToChuc nguoi)
-    {
-        var id = nguoi.UserId;
+    /// <summary>
+    /// Việc của chính mình: mình tạo, hoặc giao cho mình. Đây là thứ hiện trong danh sách.
+    /// </summary>
+    public static IQueryable<TaskItem> ViecCuaToi(this IQueryable<TaskItem> q, long userId)
+        => q.Where(t => t.CreatorId == userId || t.AssigneeId == userId);
 
-        return nguoi.VaiTro switch
-        {
-            VaiTro.GiamDoc => q,
-
-            VaiTro.TruongPhong when nguoi.DepartmentId is { } phong
-                => q.Where(t => t.CreatorId == id || t.AssigneeId == id
-                                || t.DepartmentId == phong
-                                || (t.Assignee != null && t.Assignee.DepartmentId == phong)
-                                || t.Creator!.DepartmentId == phong),
-
-            VaiTro.TruongNhom when nguoi.TeamId is { } nhom
-                => q.Where(t => t.CreatorId == id || t.AssigneeId == id
-                                || t.TeamId == nhom
-                                || (t.Assignee != null && t.Assignee.TeamId == nhom)),
-
-            _ => q.Where(t => t.CreatorId == id || t.AssigneeId == id)
-        };
-    }
-
-    /// <summary>Nhiệm vụ có tồn tại không, và người này có được xem không.</summary>
+    /// <summary>
+    /// Nhiệm vụ có tồn tại không, và người này có được xem không.
+    ///
+    /// <para>
+    /// Việc của mình thì hiển nhiên xem được. Ngoài ra còn xem được nếu mình giữ BẤT KỲ mắt xích
+    /// nào trong cùng chuỗi giao việc — dù ở trên hay ở dưới mắt xích đang mở.
+    /// </para>
+    /// <para>
+    /// Thông cả hai chiều là có chủ đích. Chiều xuống để giám đốc mở được nhánh dưới mà biết lệnh
+    /// của mình đang nằm ở tay ai. Chiều lên để nhân viên bấm được vào "Nhiệm vụ cha" ngay trên
+    /// màn hình của họ — chặn chiều này thì chính khối "Chuỗi giao việc" lại dẫn tới một trang
+    /// báo không có quyền.
+    /// </para>
+    /// </summary>
     public static async Task<(bool TonTai, bool DuocXem)> QuyenXemAsync(
         TaskDbContext db, long taskId, long userId, CancellationToken ct)
     {
-        if (!await db.Tasks.AnyAsync(t => t.Id == taskId, ct)) return (false, false);
+        var nv = await db.Tasks.AsNoTracking()
+            .Where(t => t.Id == taskId)
+            .Select(t => new { t.CreatorId, t.AssigneeId })
+            .FirstOrDefaultAsync(ct);
 
-        var nguoi = await NapAsync(db, userId, ct);
-        var duocXem = nguoi is not null && await db.Tasks.ThayDuoc(nguoi).AnyAsync(t => t.Id == taskId, ct);
-        return (true, duocXem);
+        if (nv is null) return (false, false);
+        if (nv.CreatorId == userId || nv.AssigneeId == userId) return (true, true);
+
+        var chuoi = await ChuoiGiaoViecAsync(db, taskId, ct);
+        return (true, chuoi.Any(x => x.CreatorId == userId || x.AssigneeId == userId));
     }
+
+    /// <summary>
+    /// Mọi nhiệm vụ cùng một chuỗi giao việc với <paramref name="taskId"/>: ngược lên tới gốc
+    /// rồi toả xuống hết các nhánh.
+    ///
+    /// <para>
+    /// Viết thành vòng lặp thay vì một biểu thức LINQ lồng nhiều tầng. Chuỗi dài tối đa bốn mắt
+    /// xích — cơ cấu có bốn cấp và mỗi lần giao tiếp chỉ xuống đúng một cấp — nên số lần gọi
+    /// database có cận trên rõ ràng, mà đọc lại dễ hơn hẳn. Oracle có CONNECT BY làm được trong
+    /// một câu, nhưng phải viết SQL thô và mất khả năng đổi sang provider khác.
+    /// </para>
+    /// <para>
+    /// <paramref name="doSauToiDa"/> chặn vòng lặp vô hạn. Ràng buộc CK_TASKS_PARENT_KHAC_MINH
+    /// chỉ cấm nhiệm vụ tự làm cha chính nó, không cấm được một vòng dài hơn.
+    /// </para>
+    /// </summary>
+    private static async Task<List<MatXich>> ChuoiGiaoViecAsync(
+        TaskDbContext db, long taskId, CancellationToken ct, int doSauToiDa = 10)
+    {
+        // --- Ngược lên gốc ---
+        var gocId = taskId;
+        for (var i = 0; i < doSauToiDa; i++)
+        {
+            var chaId = await db.Tasks.AsNoTracking()
+                .Where(t => t.Id == gocId)
+                .Select(t => t.ParentTaskId)
+                .FirstOrDefaultAsync(ct);
+
+            if (chaId is not { } cha) break;
+            gocId = cha;
+        }
+
+        // --- Toả xuống theo chiều rộng ---
+        var chuoi = await db.Tasks.AsNoTracking()
+            .Where(t => t.Id == gocId)
+            .Select(t => new MatXich(t.Id, t.CreatorId, t.AssigneeId))
+            .ToListAsync(ct);
+
+        var tangHienTai = chuoi.Select(x => x.Id).ToList();
+        for (var i = 0; i < doSauToiDa && tangHienTai.Count > 0; i++)
+        {
+            var tangSau = await db.Tasks.AsNoTracking()
+                .Where(t => t.ParentTaskId != null && tangHienTai.Contains(t.ParentTaskId.Value))
+                .Select(t => new MatXich(t.Id, t.CreatorId, t.AssigneeId))
+                .ToListAsync(ct);
+
+            if (tangSau.Count == 0) break;
+            chuoi.AddRange(tangSau);
+            tangHienTai = tangSau.Select(x => x.Id).ToList();
+        }
+
+        return chuoi;
+    }
+
+    /// <summary>Một mắt xích trong chuỗi giao việc — chỉ cần hai người để xét quyền xem.</summary>
+    private sealed record MatXich(long Id, long CreatorId, long? AssigneeId);
 
     /// <summary>
     /// Kiểm người giao có giao được việc cho người nhận không.

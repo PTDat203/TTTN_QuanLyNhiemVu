@@ -285,6 +285,12 @@ export interface GoiYResponse {
   noiDungDaDung: string;
   soUngVienTrongPhamVi: number;
   soUngVienDaXet: number;
+
+  /** Phòng đã cố định sẵn (gợi ý cho nhiệm vụ con) nên tầng 1 không dùng để lọc. */
+  phongCoDinh?: boolean;
+
+  /** Câu mô tả tập ứng viên đã chấm. Rỗng khi chạy ở chế độ thường. */
+  phamViMoTa?: string | null;
   suyLuanPhongBan: SuyLuanPhongBan;
   kyNangYeuCau: KyNangYeuCau[];
   canhBao: string[];

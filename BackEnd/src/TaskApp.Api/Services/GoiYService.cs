@@ -69,6 +69,36 @@ public sealed class GoiYService
             kyNangCoSan = await NapDuLieuGoiY.KyNangDaLuuAsync(_db, taskId, ct);
         }
 
+        // Đang soạn nhiệm vụ con để giao tiếp xuống: phòng đã do nhiệm vụ cha quyết định.
+        var phongCoDinh = false;
+        string? tenPhongCoDinh = null;
+
+        if (yeuCau.NhiemVuChaId is { } chaId)
+        {
+            var cha = await _db.Tasks.AsNoTracking()
+                .Include(t => t.Department)
+                .FirstOrDefaultAsync(t => t.Id == chaId, ct);
+
+            if (cha is null)
+                return KetQua<GoiYResponse>.KhongTimThay($"Không tìm thấy nhiệm vụ #{chaId}.");
+
+            // Đúng điều kiện của NhiemVuService.GiaoTiepXuongAsync, để AI không bao giờ gợi ý
+            // cho một việc mà lúc bấm giao thật backend lại từ chối.
+            if (cha.AssigneeId != nguoiGoiId)
+            {
+                return KetQua<GoiYResponse>.KhongCoQuyen(
+                    "Chỉ người đang nhận nhiệm vụ mới xem được gợi ý để giao tiếp xuống.");
+            }
+
+            // Người giao thường sửa lại tiêu đề cho hợp phần việc con. Sửa rồi thì chấm theo
+            // bản sửa; để trống thì lấy nội dung nhiệm vụ cha.
+            if (string.IsNullOrWhiteSpace(tieuDe)) tieuDe = cha.Title;
+            if (string.IsNullOrWhiteSpace(moTa)) moTa = cha.Description;
+
+            phongCoDinh = true;
+            tenPhongCoDinh = cha.Department?.Name;
+        }
+
         var noiDung = VanBanHoSo.NhiemVu(tieuDe, moTa);
         if (string.IsNullOrWhiteSpace(noiDung))
         {
@@ -98,6 +128,8 @@ public sealed class GoiYService
         // --- 3. Suy luận và xếp hạng ---
         var dauVao = await NapDuLieuGoiY.NapAsync(
             _db, noiDung, ungVienIds, moc: null, boQuaTaskId: yeuCau.TaskId, kyNangCoSan, ct);
+        dauVao.BoQuaLocPhong = phongCoDinh;
+
         var kq = await _boXepHang.ChayAsync(dauVao, chiDungTfIdf: false, ct);
 
         // --- 4. Dịch sang dạng người đọc được ---
@@ -118,6 +150,12 @@ public sealed class GoiYService
             NoiDungDaDung = noiDung,
             SoUngVienTrongPhamVi = kq.SoTrongPhamVi,
             SoUngVienDaXet = kq.UngVien.Count,
+            PhongCoDinh = phongCoDinh,
+            PhamViMoTa = phongCoDinh
+                ? $"Nhiệm vụ con của #{yeuCau.NhiemVuChaId} — phòng đã cố định" +
+                  (tenPhongCoDinh is null ? string.Empty : $" ({tenPhongCoDinh})") +
+                  $", AI chấm thẳng {kq.UngVien.Count} người bạn giao được, không đoán phòng nữa."
+                : null,
             SuyLuanPhongBan = ChuyenDoi(kq.SuyLuan),
             KyNangYeuCau = kq.SuyLuan.KyNang.Select(k => new KyNangYeuCauDto
             {
@@ -296,7 +334,26 @@ public sealed class GoiYService
                         "kết quả kém chính xác hơn. Kiểm tra dịch vụ ở thư mục BackEnd/ai.");
         }
 
-        if (s.KetLuan == KetLuanPhongBan.KhongRo && s.CacPhong.Count > 0)
+        if (kq.PhongCoDinh)
+        {
+            // Tầng 1 vẫn chạy nhưng không còn quyền lọc ai. Giữ lại đúng một tín hiệu đáng nói:
+            // nội dung trông giống việc của phòng khác hẳn — tức có khi việc này không nên giao
+            // xuống đội mình chứ không phải chọn sai người.
+            var phongCuaUngVien = kq.UngVien
+                .Select(u => u.HoSo.DepartmentId)
+                .Where(d => d.HasValue)
+                .Distinct()
+                .ToList();
+
+            if (s.CacPhong.Count > 0 && s.CacPhong[0].Diem > 0 && phongCuaUngVien.Count > 0
+                && !phongCuaUngVien.Contains(s.CacPhong[0].DonVi.Id))
+            {
+                canhBao.Add($"Nội dung này khớp với {s.CacPhong[0].DonVi.Ten} hơn là với đội của bạn " +
+                            $"({s.CacPhong[0].Diem:0.00}). Vẫn xếp hạng trong số người bạn giao được, " +
+                            "nhưng cân nhắc xem việc này có nên giao xuống đội mình không.");
+            }
+        }
+        else if (s.KetLuan == KetLuanPhongBan.KhongRo && s.CacPhong.Count > 0)
         {
             canhBao.Add($"Không xác định được nhiệm vụ thuộc phòng nào (khớp nhất là {s.CacPhong[0].DonVi.Ten} " +
                         $"nhưng chỉ đạt {s.CacPhong[0].Diem:0.00}). Đang xét mọi người trong phạm vi của bạn.");
@@ -307,7 +364,7 @@ public sealed class GoiYService
                         "đang xét ứng viên của cả hai phòng.");
         }
 
-        if (kq.PhongNgoaiPhamVi)
+        if (kq.PhongNgoaiPhamVi && !kq.PhongCoDinh)
         {
             canhBao.Add($"AI đoán nhiệm vụ thuộc {s.CacPhong[0].DonVi.Ten}, nhưng trong phạm vi giao việc của bạn " +
                         "không có ai ở phòng đó. Đang xét toàn bộ người bạn giao được — nên cân nhắc chuyển " +

@@ -62,19 +62,20 @@ tk = {u: dang_nhap(u) for u in
 # ---------------------------------------------------------------------------
 # A. Mỗi người thấy bao nhiêu nhiệm vụ — so với SQL độc lập
 # ---------------------------------------------------------------------------
-# Số liệu nền lấy từ kt10.sql trên 90 nhiệm vụ mẫu. Nhưng việc tạo thêm qua giao diện cũng phải
-# được đếm, nên mỗi kỳ vọng được cộng thêm đúng số việc ngoài dữ liệu mẫu (id > 90) mà người đó
-# nhìn thấy — lấy từ danh sách của giám đốc, người thấy tất cả. Nhờ vậy bộ kiểm thử vẫn kiểm đúng
-# quy tắc phạm vi mà không sai mỗi khi có người dùng thật tạo một nhiệm vụ mới.
+# Danh sách chỉ hiện VIỆC CỦA CHÍNH MÌNH: mình tạo, hoặc giao cho mình. Không còn phạm vi theo
+# phòng hay theo nhóm — giám đốc cũng chỉ thấy việc của giám đốc.
+#
+# Số liệu nền đếm độc lập bằng SQL trên 90 nhiệm vụ mẫu:
+#   SELECT u.USERNAME, COUNT(*) FROM TASKS t
+#     JOIN USERS u ON u.ID = t.CREATOR_ID OR u.ID = t.ASSIGNEE_ID
+#    WHERE t.ID <= 90 GROUP BY u.USERNAME;
+#
+# Việc tạo thêm qua giao diện cũng phải được đếm, nên mỗi kỳ vọng được cộng thêm đúng số việc
+# ngoài dữ liệu mẫu (id > 90) mà CHÍNH người đó nhìn thấy. Nhờ vậy bộ kiểm thử vẫn kiểm đúng quy
+# tắc phạm vi mà không sai mỗi khi có người dùng thật tạo một nhiệm vụ mới.
 MAU_CUOI = 90
-mong_doi = {"giamdoc": 90, "tp.phattrien": 58, "tp.nhansu": 16, "leader.be": 35,
+mong_doi = {"giamdoc": 7, "tp.phattrien": 16, "tp.nhansu": 16, "leader.be": 33,
             "leader.fe": 19, "nv.cuong": 13, "nv.tuan": 0}
-
-st, b = goi("GET", f"/api/nhiem-vu?kichThuocTrang=500", tk["giamdoc"])
-ngoai_mau = [t for t in (b["danhSach"] if st == 200 else []) if t["id"] > MAU_CUOI]
-if ngoai_mau:
-    print(f"Ghi chú: có {len(ngoai_mau)} nhiệm vụ ngoài dữ liệu mẫu "
-          f"({', '.join('#' + str(t['id']) for t in ngoai_mau)}) — kỳ vọng được cộng bù.")
 
 for u, n in mong_doi.items():
     st, b = goi("GET", "/api/nhiem-vu?kichThuocTrang=500", tk[u])
@@ -103,13 +104,16 @@ kiem("B  nhân viên không gọi được danh sách người nhận", st == 40
 # ---------------------------------------------------------------------------
 # C. Xem chi tiết
 # ---------------------------------------------------------------------------
+# #1: leader.be tạo, nv.cuong nhận. #55: leader.be tạo, chưa giao ai.
+# Trưởng phòng Phát triển không dính tới cả hai nên không xem được nữa, dù cùng phòng.
 for u, id_, ma in [("leader.fe", 1, 403), ("tp.nhansu", 1, 403), ("nv.cuong", 2, 403),
-                   ("tp.phattrien", 1, 200), ("tp.phattrien", 55, 200), ("leader.be", 1, 200),
+                   ("tp.phattrien", 1, 403), ("tp.phattrien", 55, 403), ("leader.be", 1, 200),
+                   ("nv.cuong", 1, 200), ("giamdoc", 1, 403),
                    ("giamdoc", 9999, 404)]:
     st, _ = goi("GET", f"/api/nhiem-vu/{id_}", tk[u])
     kiem(f"C  {u:<13} xem #{id_} -> {ma}", st == ma, f"HTTP {st}")
 
-st, b = goi("GET", "/api/nhiem-vu/1", tk["tp.phattrien"])
+st, b = goi("GET", "/api/nhiem-vu/1", tk["leader.be"])
 kiem("C  chi tiết #1 có phòng và nhóm",
      st == 200 and b.get("tenPhongBan") == "Phòng Phát triển phần mềm" and b.get("tenNhom") == "Nhóm Backend",
      f"{b.get('tenPhongBan')} / {b.get('tenNhom')}" if st == 200 else st)
@@ -261,6 +265,47 @@ if st == 201:
          [k["ten"] + "/" + k["nguon"] for k in g["kyNangYeuCau"]] if st2 == 200 else st2)
     kiem("G  gợi ý cho việc Oracle -> Giang đứng đầu",
          st2 == 200 and g["ungVien"][0]["userId"] == 9, g["ungVien"][0]["fullName"] if st2 == 200 else st2)
+
+# ---------------------------------------------------------------------------
+# H. Chuỗi giao việc: danh sách hẹp, quyền xem thông cả hai chiều
+# ---------------------------------------------------------------------------
+# Giám đốc giao xuống trưởng phòng, trưởng phòng giao tiếp xuống nhân viên. Việc con KHÔNG hiện
+# trong danh sách của giám đốc, nhưng giám đốc vẫn mở được chi tiết để biết lệnh của mình đang
+# nằm ở tay ai. Ngược lại nhân viên bấm lên được nhiệm vụ cha — nếu chặn chiều này thì chính
+# khối "Chuỗi giao việc" trên màn hình của họ lại dẫn tới trang báo không có quyền.
+st, cha_h = tao_thang("giamdoc", {
+    "title": "Kiểm thử chuỗi giao việc", "description": "Việc gốc do giám đốc giao",
+    "priority": "MEDIUM", "assigneeId": 2})
+
+if st == 201:
+    st, con_h = goi("POST", f"/api/nhiem-vu/{cha_h['id']}/giao-tiep-xuong", tk["tp.phattrien"], {
+        "title": "Kiểm thử chuỗi giao việc — phần con", "priority": "MEDIUM", "assigneeId": 7})
+    kiem("H  trưởng phòng giao tiếp xuống nhân viên -> 201", st == 201,
+         f"HTTP {st}: {loi(con_h)}")
+
+    if st == 201:
+        DA_TAO.append((con_h["id"], "tp.phattrien"))
+
+        st, b = goi("GET", "/api/nhiem-vu?kichThuocTrang=500", tk["giamdoc"])
+        trong_ds = any(t["id"] == con_h["id"] for t in (b["danhSach"] if st == 200 else []))
+        kiem("H  nhiệm vụ con KHÔNG hiện trong danh sách của giám đốc", not trong_ds,
+             f"có trong danh sách: {trong_ds}")
+
+        st, _ = goi("GET", f"/api/nhiem-vu/{con_h['id']}", tk["giamdoc"])
+        kiem("H  giám đốc mở được chi tiết nhiệm vụ con (xuôi theo chuỗi) -> 200",
+             st == 200, f"HTTP {st}")
+
+        st, _ = goi("GET", f"/api/nhiem-vu/{cha_h['id']}", tk["nv.cuong"])
+        kiem("H  nhân viên mở được nhiệm vụ cha (ngược theo chuỗi) -> 200",
+             st == 200, f"HTTP {st}")
+
+        st, b = goi("GET", "/api/nhiem-vu?kichThuocTrang=500", tk["nv.cuong"])
+        trong_ds = any(t["id"] == cha_h["id"] for t in (b["danhSach"] if st == 200 else []))
+        kiem("H  nhiệm vụ cha KHÔNG hiện trong danh sách của nhân viên", not trong_ds,
+             f"có trong danh sách: {trong_ds}")
+
+        st, _ = goi("GET", f"/api/nhiem-vu/{con_h['id']}", tk["tp.nhansu"])
+        kiem("H  người ngoài chuỗi không mở được -> 403", st == 403, f"HTTP {st}")
 
 # ---------------------------------------------------------------------------
 dat = sum(1 for d, _, _ in KET_QUA if d)

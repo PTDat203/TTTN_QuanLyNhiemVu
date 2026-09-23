@@ -119,6 +119,18 @@ public sealed class DauVaoXepHang
 
     /// <summary>Kỹ năng yêu cầu đã lưu sẵn cho nhiệm vụ. Rỗng thì AI tự trích từ nội dung.</summary>
     public IReadOnlyList<KyNangCan>? KyNangCoSan { get; init; }
+
+    /// <summary>
+    /// Bỏ bước lọc ứng viên theo phòng ban. Dùng khi phòng đã được quyết định từ trước — giao
+    /// tiếp xuống từ một nhiệm vụ cha — nên đoán lại chỉ có hại: AI đoán trúng thì lọc thừa,
+    /// đoán trượt thì loại sạch rồi phải lùi về xét tất cả, kèm một cảnh báo không làm gì được.
+    ///
+    /// <para>
+    /// Là <c>set</c> chứ không <c>init</c> vì đây là lựa chọn của người gọi chứ không phải dữ
+    /// liệu nạp từ database — <see cref="NapDuLieuGoiY"/> không biết và không cần biết.
+    /// </para>
+    /// </summary>
+    public bool BoQuaLocPhong { get; set; }
 }
 
 // ===========================================================================
@@ -220,6 +232,9 @@ public sealed class KetQuaXepHang
 
     /// <summary>AI đoán ra phòng nhưng phòng đó không có ai trong phạm vi — đã lùi về xét tất cả.</summary>
     public bool PhongNgoaiPhamVi { get; set; }
+
+    /// <summary>Phòng cố định sẵn nên tầng 1 chỉ chạy để tham khảo, không dùng để lọc.</summary>
+    public bool PhongCoDinh { get; set; }
 
     public IReadOnlyList<KetQuaUngVien> UngVien { get; set; } = Array.Empty<KetQuaUngVien>();
 }

@@ -7,6 +7,8 @@
 -- mô hình gợi ý, nên rác này làm lệch thứ hạng ứng viên và lệch cả số liệu đánh giá.
 --
 -- Xoá cả nhiệm vụ do tao_nhiem_vu_thu.py dựng để thử tay (tiền tố [THỬ]).
+-- Mục H của kiem_thu_phan_quyen.py dựng một chuỗi cha - con; cả hai mắt xích đều nằm
+-- trong danh sách dưới đây, vì việc đã giao thì API không xoá được.
 -- Chỉ xoá theo ĐÚNG tiêu đề công cụ kiểm thử dùng, và chỉ những việc chưa từng có
 -- tiến độ hay báo cáo — để không bao giờ chạm vào dữ liệu nghiệp vụ thật.
 --
@@ -30,6 +32,8 @@ BEGIN
     SELECT t.ID, t.TITLE, t.STATUS_CODE, t.ASSIGNEE_ID
     FROM   TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
+                        'Kiểm thử chuỗi giao việc',
+                        'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
             OR t.TITLE LIKE '[THỬ]%')
@@ -44,6 +48,8 @@ BEGIN
   WHERE  k.TASK_ID IN (
     SELECT t.ID FROM TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
+                        'Kiểm thử chuỗi giao việc',
+                        'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
             OR t.TITLE LIKE '[THỬ]%')
@@ -53,6 +59,8 @@ BEGIN
 
   DELETE FROM TASKS t
   WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
+                        'Kiểm thử chuỗi giao việc',
+                        'Kiểm thử chuỗi giao việc — phần con',
                       'Lập bảng lương và bảo hiểm tháng 10',
                       'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
           OR t.TITLE LIKE '[THỬ]%')

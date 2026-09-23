@@ -195,6 +195,8 @@ export class GoiYService {
   /** Gợi ý theo nhiệm vụ đã lưu, hoặc theo nội dung đang gõ. */
   goiY(yeuCau: {
     taskId?: number;
+    /** Đang soạn nhiệm vụ con của nhiệm vụ này — AI bỏ bước đoán phòng. */
+    nhiemVuChaId?: number;
     title?: string;
     description?: string;
     soLuong?: number;

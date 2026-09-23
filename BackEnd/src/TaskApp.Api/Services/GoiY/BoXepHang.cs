@@ -149,12 +149,14 @@ public sealed class BoXepHang
         {
             PhuongPhap = phuongPhap.Ten,
             SuyLuan = suyLuan,
-            SoTrongPhamVi = dv.UngVien.Count
+            SoTrongPhamVi = dv.UngVien.Count,
+            PhongCoDinh = dv.BoQuaLocPhong
         };
 
         // ---- 4. Lọc theo phòng — không bao giờ để trống --------------------------------
+        // Phòng đã cố định thì bỏ qua: tập ứng viên vốn đã nằm gọn trong một phòng rồi.
         var xet = dv.UngVien.ToList();
-        if (suyLuan.KetLuan != KetLuanPhongBan.KhongRo)
+        if (!dv.BoQuaLocPhong && suyLuan.KetLuan != KetLuanPhongBan.KhongRo)
         {
             var trongPhong = xet.Where(u => u.DepartmentId is { } d && suyLuan.PhongDaChon.Contains(d)).ToList();
             if (trongPhong.Count > 0) xet = trongPhong;
@@ -173,7 +175,11 @@ public sealed class BoXepHang
         // Dùng làm SÀN chứ không cộng thêm: ai tự khớp tốt hơn phòng mình thì giữ nguyên điểm của
         // họ, ai không khớp gì thì ít nhất được hưởng độ khớp của phòng. Chỉ áp dụng ở nhánh
         // KHÔNG RÕ; hai nhánh kia đã lọc theo phòng rồi nên cộng vào chỉ là dịch cả cụm.
-        var sanTheoPhong = suyLuan.KetLuan == KetLuanPhongBan.KhongRo
+        //
+        // Không áp khi phòng đã cố định: mọi ứng viên cùng một phòng nên cái sàn giống hệt nhau,
+        // chẳng phân biệt được ai với ai, chỉ nâng đều điểm ngữ nghĩa lên rồi che mất cảnh báo
+        // "không ai có hồ sơ khớp rõ".
+        var sanTheoPhong = !dv.BoQuaLocPhong && suyLuan.KetLuan == KetLuanPhongBan.KhongRo
             ? suyLuan.CacPhong.ToDictionary(p => p.DonVi.Id, p => p.Diem)
             : null;
 
