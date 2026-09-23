@@ -99,8 +99,26 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
               <button class="nut-chinh" (click)="tiepNhan()">Tiếp nhận nhiệm vụ</button>
             }
 
-            @if (coTheCapNhatTienDo()) {
-              <div class="hanh-dong doc">
+            <!-- Hai việc người thực hiện làm được, gập lại thành hai nút. Mở cả hai biểu
+                 mẫu cùng lúc thì màn hình rối mà người dùng mỗi lần chỉ làm một việc. -->
+            @if (coTheCapNhatTienDo() || coTheBaoCao()) {
+              <div class="nhom-nut">
+                @if (coTheCapNhatTienDo()) {
+                  <button [class.dang-mo]="khungMo() === 'tien-do'" (click)="moKhung('tien-do')">
+                    Cập nhật tiến độ
+                  </button>
+                }
+                @if (coTheBaoCao()) {
+                  <button class="nut-chinh" [class.dang-mo]="khungMo() === 'bao-cao'"
+                          (click)="moKhung('bao-cao')">
+                    Báo cáo kết quả
+                  </button>
+                }
+              </div>
+            }
+
+            @if (coTheCapNhatTienDo() && khungMo() === 'tien-do') {
+              <div class="hanh-dong doc khung">
                 <label>
                   Tiến độ: {{ phanTram }}%
                   <input type="range" min="0" max="100" [(ngModel)]="phanTram" />
@@ -110,18 +128,24 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
                   rows="2"
                   placeholder="Mô tả công việc đã làm…"
                 ></textarea>
-                <button (click)="capNhatTienDo()">Cập nhật tiến độ</button>
+                <div class="hang">
+                  <button class="phu-nhat" (click)="dongKhung()">Huỷ</button>
+                  <button class="nut-chinh" (click)="capNhatTienDo()">Lưu tiến độ</button>
+                </div>
               </div>
             }
 
-            @if (coTheBaoCao()) {
-              <div class="hanh-dong doc">
+            @if (coTheBaoCao() && khungMo() === 'bao-cao') {
+              <div class="hanh-dong doc khung">
                 <textarea
                   [(ngModel)]="noiDungBaoCao"
                   rows="3"
                   placeholder="Nội dung báo cáo kết quả…"
                 ></textarea>
-                <button class="nut-chinh" (click)="guiBaoCao()">Gửi báo cáo kết quả</button>
+                <div class="hang">
+                  <button class="phu-nhat" (click)="dongKhung()">Huỷ</button>
+                  <button class="nut-chinh" (click)="guiBaoCao()">Gửi báo cáo kết quả</button>
+                </div>
               </div>
             }
 
@@ -317,6 +341,28 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         display: grid;
         gap: 11px;
       }
+      /* Hàng nút gập: mỗi nút một cột bằng nhau cho cân. */
+      .nhom-nut {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 10px;
+      }
+      /* Nút của khung đang mở chìm xuống, để thấy rõ đang ở biểu mẫu nào. */
+      .nhom-nut button.dang-mo {
+        background: var(--nen);
+        border-color: var(--vien-dam);
+        color: var(--chu-vua);
+        box-shadow: none;
+      }
+      /* Khung biểu mẫu vừa mở: lùi vào và có vạch dọc nối lên nút vừa bấm. */
+      .khung {
+        margin-top: 12px;
+        padding: 14px;
+        border: 1px solid var(--vien);
+        border-radius: var(--bo-nho);
+        background: var(--nen-diu);
+      }
       .hang {
         display: flex;
         gap: 10px;
@@ -469,6 +515,9 @@ export class ChiTietComponent implements OnInit {
   phanTram = 50;
   noiDungTienDo = '';
   noiDungBaoCao = '';
+
+  /** Biểu mẫu hành động nào đang mở. Rỗng nghĩa là chỉ hiện hàng nút. */
+  readonly khungMo = signal<'tien-do' | 'bao-cao' | ''>('');
   yKien = '';
   diemChatLuong: number | null = null;
   diemHoanThanh: number | null = null;
@@ -573,6 +622,7 @@ export class ChiTietComponent implements OnInit {
       next: () => {
         this.thanhCong.set(thongBao);
         this.loi.set('');
+        this.khungMo.set('');
         // Trả ô chọn về rỗng. Để nguyên người vừa chọn thì màn hình trông như thao tác
         // chưa gửi đi, và người giao dễ bấm thêm lần nữa.
         this.nguoiNhanId = null;
@@ -583,6 +633,17 @@ export class ChiTietComponent implements OnInit {
         this.loi.set(e?.error?.detail ?? 'Thao tác không thực hiện được.');
       },
     };
+  }
+
+  /** Bấm nút đang mở lần nữa thì gập lại — đỡ phải tìm nút Huỷ. */
+  moKhung(ten: 'tien-do' | 'bao-cao'): void {
+    this.khungMo.set(this.khungMo() === ten ? '' : ten);
+    this.loi.set('');
+  }
+
+  dongKhung(): void {
+    this.khungMo.set('');
+    this.loi.set('');
   }
 
   giao(): void {
