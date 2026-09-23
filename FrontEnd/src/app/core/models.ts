@@ -69,7 +69,9 @@ export type MaTrangThai =
   | 'DANG_THUC_HIEN'
   | 'CHO_XAC_NHAN'
   | 'YEU_CAU_BO_SUNG'
-  | 'HOAN_THANH';
+  | 'HOAN_THANH'
+  | 'TAM_DUNG'
+  | 'DA_HUY';
 
 export type MucUuTien = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -138,8 +140,30 @@ export interface TepDinhKem {
   uploadedAt?: string | null;
 }
 
+/** Một nhiệm vụ con đã giao tiếp xuống cấp dưới. */
+export interface NhiemVuCon {
+  id: number;
+  title: string;
+  statusCode: MaTrangThai;
+  tenTrangThai: string;
+  assigneeId?: number | null;
+  tenNguoiThucHien?: string | null;
+}
+
 export interface NhiemVuChiTiet extends NhiemVuTomTat {
   description?: string | null;
+
+  /** Lý do tạm dừng hoặc huỷ. Rỗng khi nhiệm vụ đang chạy bình thường. */
+  lyDoDung?: string | null;
+  tenNguoiDung?: string | null;
+  dungLuc?: string | null;
+
+  /** Nhiệm vụ cha, nếu việc này được giao tiếp xuống từ một nhiệm vụ khác. */
+  parentTaskId?: number | null;
+  tieuDeNhiemVuCha?: string | null;
+
+  /** Các nhiệm vụ con đã giao tiếp xuống. */
+  nhiemVuCon: NhiemVuCon[];
   trangThaiKeTiep: MaTrangThai[];
   lichSuTienDo: TienDo[];
   danhSachBaoCao: BaoCao[];
@@ -292,6 +316,8 @@ export const MAU_TRANG_THAI: Record<MaTrangThai, string> = {
   CHO_XAC_NHAN: '#d97706',
   YEU_CAU_BO_SUNG: '#dc2626',
   HOAN_THANH: '#16a34a',
+  TAM_DUNG: '#a16207',
+  DA_HUY: '#64748b',
 };
 
 export const MAU_UU_TIEN: Record<MucUuTien, string> = {
@@ -307,4 +333,6 @@ export const DANH_SACH_TRANG_THAI: { ma: MaTrangThai; ten: string }[] = [
   { ma: 'CHO_XAC_NHAN', ten: 'Chờ xác nhận' },
   { ma: 'YEU_CAU_BO_SUNG', ten: 'Yêu cầu bổ sung' },
   { ma: 'HOAN_THANH', ten: 'Hoàn thành' },
+  { ma: 'TAM_DUNG', ten: 'Tạm dừng' },
+  { ma: 'DA_HUY', ten: 'Đã huỷ' },
 ];

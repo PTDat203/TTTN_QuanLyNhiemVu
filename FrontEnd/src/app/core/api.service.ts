@@ -117,6 +117,32 @@ export class NhiemVuService {
     return this.http.put<NhiemVuChiTiet>(`${API}/nhiem-vu/${id}`, yeuCau);
   }
 
+  /** Tạm dừng nhiệm vụ kèm lý do. Mở lại được. */
+  tamDung(id: number, lyDo: string, kemNhiemVuCon = true): Observable<NhiemVuChiTiet> {
+    return this.http.post<NhiemVuChiTiet>(`${API}/nhiem-vu/${id}/tam-dung`, { lyDo, kemNhiemVuCon });
+  }
+
+  /** Huỷ hẳn nhiệm vụ kèm lý do. KHÔNG mở lại được. */
+  huy(id: number, lyDo: string, kemNhiemVuCon = true): Observable<NhiemVuChiTiet> {
+    return this.http.post<NhiemVuChiTiet>(`${API}/nhiem-vu/${id}/huy`, { lyDo, kemNhiemVuCon });
+  }
+
+  /** Mở lại nhiệm vụ đang tạm dừng, về đúng trạng thái trước khi dừng. */
+  moLai(id: number): Observable<NhiemVuChiTiet> {
+    return this.http.post<NhiemVuChiTiet>(`${API}/nhiem-vu/${id}/mo-lai`, {});
+  }
+
+  /** Giao tiếp nhiệm vụ đang nhận xuống cấp dưới, tạo một nhiệm vụ con. */
+  giaoTiepXuong(id: number, than: {
+    title: string;
+    description?: string | null;
+    priority?: string | null;
+    dueDate?: string | null;
+    assigneeId: number;
+  }): Observable<NhiemVuChiTiet> {
+    return this.http.post<NhiemVuChiTiet>(`${API}/nhiem-vu/${id}/giao-tiep-xuong`, than);
+  }
+
   xoa(id: number): Observable<void> {
     return this.http.delete<void>(`${API}/nhiem-vu/${id}`);
   }

@@ -80,9 +80,33 @@ public class NhiemVuTomTatDto
 }
 
 /// <summary>Nhiệm vụ đầy đủ, kèm lịch sử tiến độ và báo cáo.</summary>
+/// <summary>Một nhiệm vụ con, đủ để người dừng nhiệm vụ cha biết ai đang chịu ảnh hưởng.</summary>
+public sealed class NhiemVuConDto
+{
+    public long Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string StatusCode { get; set; } = string.Empty;
+    public string TenTrangThai { get; set; } = string.Empty;
+    public long? AssigneeId { get; set; }
+    public string? TenNguoiThucHien { get; set; }
+}
+
 public sealed class NhiemVuChiTietDto : NhiemVuTomTatDto
 {
     public string? Description { get; set; }
+
+    /// <summary>Lý do tạm dừng hoặc huỷ. Rỗng khi nhiệm vụ đang chạy bình thường.</summary>
+    public string? LyDoDung { get; set; }
+
+    public string? TenNguoiDung { get; set; }
+    public DateTime? DungLuc { get; set; }
+
+    /// <summary>Nhiệm vụ cha, nếu nhiệm vụ này được giao tiếp xuống từ một nhiệm vụ khác.</summary>
+    public long? ParentTaskId { get; set; }
+    public string? TieuDeNhiemVuCha { get; set; }
+
+    /// <summary>Các nhiệm vụ con đã giao tiếp xuống.</summary>
+    public IReadOnlyList<NhiemVuConDto> NhiemVuCon { get; set; } = Array.Empty<NhiemVuConDto>();
 
     /// <summary>Các trạng thái hợp lệ có thể chuyển tới từ trạng thái hiện tại.</summary>
     public IReadOnlyList<string> TrangThaiKeTiep { get; set; } = Array.Empty<string>();
@@ -173,5 +197,29 @@ public sealed class SuaNhiemVuRequest
 /// <summary>Giao nhiệm vụ cho một người thực hiện.</summary>
 public sealed class GiaoNhiemVuRequest
 {
+    public long AssigneeId { get; set; }
+}
+
+/// <summary>Tạm dừng hoặc huỷ nhiệm vụ. Lý do là bắt buộc.</summary>
+public sealed class DungNhiemVuRequest
+{
+    /// <summary>
+    /// Vì sao dừng. Bắt buộc, vì người đang làm dở cần biết lý do — nếu không họ sẽ đi hỏi
+    /// lại, và người giao phải giải thích cho từng người một.
+    /// </summary>
+    public string LyDo { get; set; } = string.Empty;
+
+    /// <summary>Dừng theo cả các nhiệm vụ con đang chạy ở cấp dưới.</summary>
+    public bool KemNhiemVuCon { get; set; } = true;
+}
+
+/// <summary>Giao tiếp một nhiệm vụ đang nhận xuống cấp dưới, tạo ra một nhiệm vụ con.</summary>
+public sealed class GiaoTiepXuongRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Priority { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
     public long AssigneeId { get; set; }
 }

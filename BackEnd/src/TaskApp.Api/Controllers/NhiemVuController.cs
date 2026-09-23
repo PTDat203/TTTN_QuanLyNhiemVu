@@ -106,6 +106,62 @@ public sealed class NhiemVuController : ControllerBase
         return TraVe(kq);
     }
 
+    /// <summary>Tạm dừng nhiệm vụ kèm lý do. Chỉ người tạo. Mở lại được.</summary>
+    [HttpPost("{id:long}/tam-dung")]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
+    [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> TamDung(
+        long id, [FromBody] DungNhiemVuRequest yeuCau, CancellationToken ct)
+    {
+        var kq = await _service.DungAsync(id, yeuCau, _hienTai.LayUserIdBatBuoc(), huyHan: false, ct);
+        return TraVe(kq);
+    }
+
+    /// <summary>Huỷ hẳn nhiệm vụ kèm lý do. Chỉ người tạo. KHÔNG mở lại được.</summary>
+    [HttpPost("{id:long}/huy")]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
+    [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Huy(
+        long id, [FromBody] DungNhiemVuRequest yeuCau, CancellationToken ct)
+    {
+        var kq = await _service.DungAsync(id, yeuCau, _hienTai.LayUserIdBatBuoc(), huyHan: true, ct);
+        return TraVe(kq);
+    }
+
+    /// <summary>Mở lại nhiệm vụ đang tạm dừng, về đúng trạng thái trước khi dừng.</summary>
+    [HttpPost("{id:long}/mo-lai")]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
+    [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MoLai(long id, CancellationToken ct)
+    {
+        var kq = await _service.MoLaiAsync(id, _hienTai.LayUserIdBatBuoc(), ct);
+        return TraVe(kq);
+    }
+
+    /// <summary>
+    /// Giao tiếp nhiệm vụ đang nhận xuống cấp dưới, tạo một nhiệm vụ con.
+    /// Chỉ người ĐANG NHẬN nhiệm vụ, và phải thuộc nhóm có quyền giao việc.
+    /// </summary>
+    [HttpPost("{id:long}/giao-tiep-xuong")]
+    [Authorize(Roles = VaiTro.NhomGiaoViec)]
+    [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GiaoTiepXuong(
+        long id, [FromBody] GiaoTiepXuongRequest yeuCau, CancellationToken ct)
+    {
+        var kq = await _service.GiaoTiepXuongAsync(id, yeuCau, _hienTai.LayUserIdBatBuoc(), ct);
+        return kq.ThanhCong
+            ? CreatedAtAction(nameof(ChiTiet), new { id = kq.DuLieu!.Id }, kq.DuLieu)
+            : TraVe(kq);
+    }
+
     /// <summary>Tiếp nhận nhiệm vụ được giao. Chỉ chính người được giao.</summary>
     [HttpPost("{id:long}/tiep-nhan")]
     [ProducesResponseType(typeof(NhiemVuChiTietDto), StatusCodes.Status200OK)]

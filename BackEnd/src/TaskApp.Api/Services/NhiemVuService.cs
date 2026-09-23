@@ -163,6 +163,8 @@ public sealed class NhiemVuService
             .Include(t => t.Assignee)
             .Include(t => t.Department)
             .Include(t => t.Team)
+            .Include(t => t.NguoiDung)
+            .Include(t => t.Parent)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         if (nv is null)
@@ -221,7 +223,34 @@ public sealed class NhiemVuService
             })
             .ToListAsync(ct);
 
+        // Nhiệm vụ con: người sắp dừng nhiệm vụ cha cần nhìn thấy ai đang chịu ảnh hưởng
+        // trước khi bấm, thay vì phải tự đi dò.
+        var nhiemVuCon = await _db.Tasks.AsNoTracking()
+            .Where(t => t.ParentTaskId == id)
+            .OrderBy(t => t.Id)
+            .Select(t => new NhiemVuConDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                StatusCode = t.StatusCode,
+                AssigneeId = t.AssigneeId,
+                TenNguoiThucHien = t.Assignee != null ? t.Assignee.FullName : null
+            })
+            .ToListAsync(ct);
+
+        foreach (var con in nhiemVuCon)
+        {
+            con.TenTrangThai = TrangThaiNhiemVu.TenHienThi(con.StatusCode);
+        }
+
         var dto = ChuyenDoiChiTiet(nv, tienDo, baoCao, tep);
+        dto.LyDoDung = nv.StopReason;
+        dto.TenNguoiDung = nv.NguoiDung?.FullName;
+        dto.DungLuc = nv.StoppedAt;
+        dto.ParentTaskId = nv.ParentTaskId;
+        dto.TieuDeNhiemVuCha = nv.Parent?.Title;
+        dto.NhiemVuCon = nhiemVuCon;
+
         return KetQua<NhiemVuChiTietDto>.Ok(dto);
     }
 
@@ -493,6 +522,249 @@ public sealed class NhiemVuService
     /// cùng từ một người nên luôn thoả khoá ngoại ghép FK_TASKS_TEAM_DEPT.
     /// </para>
     /// </summary>
+    // ------------------------------------------------------------------ tạm dừng / huỷ
+
+    /// <summary>
+    /// Tạm dừng hoặc huỷ một nhiệm vụ kèm lý do.
+    ///
+    /// <para>
+    /// Khác nhau ở chỗ mở lại được hay không: tạm dừng ghi lại trạng thái đang dở vào
+    /// <c>PrevStatusCode</c> để quay về đúng chỗ, còn huỷ là kết thúc hẳn.
+    /// </para>
+    /// <para>
+    /// Chỉ người tạo được dừng. Cấp trên muốn dừng thì dừng nhiệm vụ CỦA MÌNH, rồi hệ thống
+    /// lan xuống các nhiệm vụ con — đúng đường đi của quyền trong tổ chức, không ai với tay
+    /// qua đầu cấp trung gian.
+    /// </para>
+    /// </summary>
+    public async Task<KetQua<NhiemVuChiTietDto>> DungAsync(
+        long id, DungNhiemVuRequest yeuCau, long userId, bool huyHan, CancellationToken ct = default)
+    {
+        var lyDo = (yeuCau.LyDo ?? string.Empty).Trim();
+        if (lyDo.Length == 0)
+        {
+            return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(
+                huyHan ? "Phải nêu lý do huỷ nhiệm vụ." : "Phải nêu lý do tạm dừng nhiệm vụ.");
+        }
+
+        var nv = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (nv is null) return KetQua<NhiemVuChiTietDto>.KhongTimThay($"Không tìm thấy nhiệm vụ #{id}.");
+
+        if (nv.CreatorId != userId)
+        {
+            return KetQua<NhiemVuChiTietDto>.KhongCoQuyen(
+                "Chỉ người tạo nhiệm vụ mới được tạm dừng hoặc huỷ nhiệm vụ này.");
+        }
+
+        if (!TrangThaiNhiemVu.DungDuoc(nv.StatusCode))
+        {
+            return KetQua<NhiemVuChiTietDto>.ThatBai(
+                $"Nhiệm vụ đang ở \"{TrangThaiNhiemVu.TenHienThi(nv.StatusCode)}\" nên không dừng được.",
+                MaLoiChung.ChuyenTrangThaiKhongHopLe);
+        }
+
+        var luc = DateTime.Now;
+        DatTrangThaiDung(nv, huyHan, lyDo, userId, luc);
+
+        // Lan xuống các nhiệm vụ con. Đi theo chiều rộng để không bỏ sót cấp cháu, và giữ
+        // một tập đã thăm để dữ liệu lỗi tạo vòng lặp cũng không làm treo vòng lặp này.
+        var soCon = 0;
+        if (yeuCau.KemNhiemVuCon)
+        {
+            var daTham = new HashSet<long> { nv.Id };
+            var dangXet = new Queue<long>();
+            dangXet.Enqueue(nv.Id);
+
+            while (dangXet.Count > 0)
+            {
+                var chaId = dangXet.Dequeue();
+                var cac = await _db.Tasks.Where(t => t.ParentTaskId == chaId).ToListAsync(ct);
+                foreach (var con in cac)
+                {
+                    if (!daTham.Add(con.Id)) continue;
+                    dangXet.Enqueue(con.Id);
+                    if (!TrangThaiNhiemVu.DungDuoc(con.StatusCode)) continue;
+
+                    DatTrangThaiDung(
+                        con, huyHan,
+                        $"Nhiệm vụ cấp trên #{chaId} đã {(huyHan ? "huỷ" : "tạm dừng")}: {lyDo}",
+                        userId, luc);
+                    soCon++;
+                }
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _log.LogInformation(
+            "{ThaoTac} nhiệm vụ #{Id} bởi {UserId}, kèm {SoCon} nhiệm vụ con",
+            huyHan ? "Huỷ" : "Tạm dừng", id, userId, soCon);
+
+        return await DocChiTietAsync(id, ct);
+    }
+
+    /// <summary>Mở lại một nhiệm vụ đang tạm dừng, về đúng trạng thái trước khi dừng.</summary>
+    public async Task<KetQua<NhiemVuChiTietDto>> MoLaiAsync(
+        long id, long userId, CancellationToken ct = default)
+    {
+        var nv = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (nv is null) return KetQua<NhiemVuChiTietDto>.KhongTimThay($"Không tìm thấy nhiệm vụ #{id}.");
+
+        if (nv.CreatorId != userId)
+        {
+            return KetQua<NhiemVuChiTietDto>.KhongCoQuyen(
+                "Chỉ người tạo nhiệm vụ mới được mở lại nhiệm vụ này.");
+        }
+
+        if (nv.StatusCode == TrangThaiNhiemVu.DaHuy)
+        {
+            return KetQua<NhiemVuChiTietDto>.ThatBai(
+                "Nhiệm vụ đã huỷ hẳn nên không mở lại được. Hãy tạo một nhiệm vụ mới.",
+                MaLoiChung.ChuyenTrangThaiKhongHopLe);
+        }
+
+        if (nv.StatusCode != TrangThaiNhiemVu.TamDung)
+        {
+            return KetQua<NhiemVuChiTietDto>.ThatBai(
+                "Nhiệm vụ không ở trạng thái tạm dừng.", MaLoiChung.ChuyenTrangThaiKhongHopLe);
+        }
+
+        // Nhớ mốc dừng TRƯỚC khi xoá, để nhận ra những nhiệm vụ con đã bị dừng theo cùng
+        // thao tác này — chúng mang đúng mốc thời gian đó.
+        var mocDung = nv.StoppedAt;
+
+        MoTrangThaiDung(nv);
+
+        // Mở lại theo dây chuyền. Chỉ mở những nhiệm vụ con bị dừng CÙNG LÚC với cha, tức
+        // bị dừng vì cha chứ không phải do cấp dưới tự dừng vì lý do riêng — mở nhầm những
+        // cái đó là ghi đè quyết định của người khác.
+        var soCon = 0;
+        if (mocDung is { } moc)
+        {
+            var daTham = new HashSet<long> { nv.Id };
+            var dangXet = new Queue<long>();
+            dangXet.Enqueue(nv.Id);
+
+            while (dangXet.Count > 0)
+            {
+                var chaId = dangXet.Dequeue();
+                var cac = await _db.Tasks
+                    .Where(t => t.ParentTaskId == chaId
+                                && t.StatusCode == TrangThaiNhiemVu.TamDung
+                                && t.StoppedAt == moc)
+                    .ToListAsync(ct);
+
+                foreach (var con in cac)
+                {
+                    if (!daTham.Add(con.Id)) continue;
+                    dangXet.Enqueue(con.Id);
+                    MoTrangThaiDung(con);
+                    soCon++;
+                }
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _log.LogInformation(
+            "Mở lại nhiệm vụ #{Id} về {TrangThai}, kèm {SoCon} nhiệm vụ con", id, nv.StatusCode, soCon);
+        return await DocChiTietAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Giao tiếp một nhiệm vụ mình đang nhận xuống cấp dưới, tạo ra một nhiệm vụ con.
+    ///
+    /// <para>
+    /// Cần thao tác riêng vì chỉ người tạo mới giao được việc: người nhận không thể giao lại
+    /// chính nhiệm vụ đó. Nhiệm vụ con là một nhiệm vụ độc lập, do người này làm chủ, chỉ nối
+    /// với nhiệm vụ gốc qua <c>ParentTaskId</c>.
+    /// </para>
+    /// </summary>
+    public async Task<KetQua<NhiemVuChiTietDto>> GiaoTiepXuongAsync(
+        long chaId, GiaoTiepXuongRequest yeuCau, long userId, CancellationToken ct = default)
+    {
+        var cha = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == chaId, ct);
+        if (cha is null) return KetQua<NhiemVuChiTietDto>.KhongTimThay($"Không tìm thấy nhiệm vụ #{chaId}.");
+
+        if (cha.AssigneeId != userId)
+        {
+            return KetQua<NhiemVuChiTietDto>.KhongCoQuyen(
+                "Chỉ người đang nhận nhiệm vụ mới được giao tiếp xuống cấp dưới.");
+        }
+
+        if (!TrangThaiNhiemVu.DungDuoc(cha.StatusCode))
+        {
+            return KetQua<NhiemVuChiTietDto>.ThatBai(
+                $"Nhiệm vụ cha đang ở \"{TrangThaiNhiemVu.TenHienThi(cha.StatusCode)}\" nên không giao tiếp được.",
+                MaLoiChung.ChuyenTrangThaiKhongHopLe);
+        }
+
+        var (nguoiNhan, loiGiao) = await PhamViToChuc.KiemTraGiaoAsync(_db, userId, yeuCau.AssigneeId, ct);
+        if (nguoiNhan is null) return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe(loiGiao!);
+
+        var tieuDe = (yeuCau.Title ?? string.Empty).Trim();
+        if (tieuDe.Length == 0)
+        {
+            return KetQua<NhiemVuChiTietDto>.DuLieuKhongHopLe("Tiêu đề nhiệm vụ không được để trống.");
+        }
+
+        var con = new TaskItem
+        {
+            Title = tieuDe,
+            Description = yeuCau.Description,
+            CreatorId = userId,
+            ParentTaskId = cha.Id,
+            Priority = string.IsNullOrWhiteSpace(yeuCau.Priority) ? cha.Priority : yeuCau.Priority!,
+            StartDate = yeuCau.StartDate ?? cha.StartDate,
+            DueDate = yeuCau.DueDate ?? cha.DueDate,
+            StatusCode = TrangThaiNhiemVu.DaGiao,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        GanNguoiThucHien(con, nguoiNhan);
+
+        // Giao tiếp xuống tức là đã nhận việc rồi. Tự tiếp nhận nhiệm vụ cha thay vì bắt người
+        // dùng bấm hai nút, rồi quay ra tạo nhiệm vụ mới và quên mất nội dung việc gốc.
+        var daTuTiepNhan = false;
+        if (cha.StatusCode == TrangThaiNhiemVu.DaGiao)
+        {
+            cha.StatusCode = TrangThaiNhiemVu.DangThucHien;
+            cha.UpdatedAt = DateTime.Now;
+            daTuTiepNhan = true;
+        }
+
+        _db.Tasks.Add(con);
+        await _db.SaveChangesAsync(ct);
+        _log.LogInformation(
+            "Giao tiếp nhiệm vụ #{ChaId} xuống, tạo nhiệm vụ con #{ConId}{TuNhan}",
+            chaId, con.Id, daTuTiepNhan ? " (tự tiếp nhận nhiệm vụ cha)" : "");
+
+        return await DocChiTietAsync(con.Id, ct);
+    }
+
+    /// <summary>Gỡ trạng thái dừng, đưa nhiệm vụ về đúng chỗ đang dở. Không lưu xuống database.</summary>
+    private static void MoTrangThaiDung(TaskItem nv)
+    {
+        // Dữ liệu cũ có thể thiếu PrevStatusCode; lúc đó lùi về MOI_TAO cho an toàn.
+        nv.StatusCode = nv.PrevStatusCode ?? TrangThaiNhiemVu.MoiTao;
+        nv.PrevStatusCode = null;
+        nv.StopReason = null;
+        nv.StoppedBy = null;
+        nv.StoppedAt = null;
+        nv.UpdatedAt = DateTime.Now;
+    }
+
+    /// <summary>Đặt các trường trạng thái dừng cho một nhiệm vụ. Không lưu xuống database.</summary>
+    private static void DatTrangThaiDung(
+        TaskItem nv, bool huyHan, string lyDo, long nguoiDungId, DateTime luc)
+    {
+        // Chỉ tạm dừng mới cần nhớ trạng thái cũ; huỷ là kết thúc nên không mở lại.
+        nv.PrevStatusCode = huyHan ? null : nv.StatusCode;
+        nv.StatusCode = huyHan ? TrangThaiNhiemVu.DaHuy : TrangThaiNhiemVu.TamDung;
+        nv.StopReason = lyDo.Length > 500 ? lyDo[..500] : lyDo;
+        nv.StoppedBy = nguoiDungId;
+        nv.StoppedAt = luc;
+        nv.UpdatedAt = luc;
+    }
+
     private static void GanNguoiThucHien(TaskItem nv, User nguoiNhan)
     {
         nv.AssigneeId = nguoiNhan.Id;

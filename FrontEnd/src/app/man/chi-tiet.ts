@@ -4,7 +4,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, NhiemVuService } from '../core/api.service';
-import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
+import { MAU_TRANG_THAI, MaTrangThai, MucUuTien, NguoiDung, NhiemVuChiTiet, NhiemVuCon } from '../core/models';
 
 @Component({
   selector: 'app-chi-tiet',
@@ -58,6 +58,25 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
           <section class="the">
             <h2>Hành động</h2>
 
+            <!-- Nhiệm vụ đã dừng: nói ngay vì sao và ai quyết định, đặt trên mọi thao tác
+                 khác để người thực hiện không mất công tìm nút rồi mới biết là bị dừng. -->
+            @if (daDung()) {
+              <div class="bao-dung" [class.huy]="nv()!.statusCode === 'DA_HUY'">
+                <strong>
+                  {{ nv()!.statusCode === 'DA_HUY' ? 'Nhiệm vụ đã huỷ' : 'Nhiệm vụ đang tạm dừng' }}
+                </strong>
+                <p class="ly-do">{{ nv()!.lyDoDung }}</p>
+                <p class="boi">
+                  {{ nv()!.tenNguoiDung }} · {{ nv()!.dungLuc | date: 'dd/MM/yyyy HH:mm' }}
+                  @if (nv()!.statusCode === 'TAM_DUNG') {
+                    · có thể mở lại để làm tiếp
+                  } @else {
+                    · không mở lại được
+                  }
+                </p>
+              </div>
+            }
+
             @if (coTheGiao()) {
               <div class="hanh-dong">
                 <select [(ngModel)]="nguoiNhanId">
@@ -96,7 +115,71 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
             }
 
             @if (coTheTiepNhan()) {
-              <button class="nut-chinh" (click)="tiepNhan()">Tiếp nhận nhiệm vụ</button>
+              <div class="nhom-nut">
+                <button class="nut-chinh" (click)="tiepNhan()">Nhận nhiệm vụ</button>
+                <!-- Chỉ hiện với người còn có cấp dưới để giao. Nhân viên cấp thấp nhất
+                     thì không có nút này. -->
+                @if (coTheGiaoTiepXuong()) {
+                  <button [class.dang-mo]="khungMo() === 'giao-tiep'"
+                          (click)="moKhungGiaoTiep()">
+                    Nhận và giao cho cấp dưới
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Giao tiếp xuống: chép sẵn tiêu đề và mô tả của nhiệm vụ gốc, để người giao
+                 không phải nhớ lại nội dung rồi gõ lại từ đầu. -->
+            @if (khungMo() === 'giao-tiep') {
+              <div class="hanh-dong doc khung">
+                <p class="nhac">
+                  Tạo một nhiệm vụ con giao xuống cấp dưới. Nhiệm vụ này vẫn thuộc trách
+                  nhiệm của bạn và sẽ tự chuyển sang <strong>Đang thực hiện</strong>.
+                </p>
+
+                <label>
+                  Tiêu đề <span class="bat-buoc">*</span>
+                  <input [(ngModel)]="gtTieuDe" maxlength="200" />
+                </label>
+
+                <label>
+                  Mô tả
+                  <textarea [(ngModel)]="gtMoTa" rows="3"></textarea>
+                </label>
+
+                <div class="hang-3">
+                  <label>
+                    Người thực hiện <span class="bat-buoc">*</span>
+                    <select [(ngModel)]="gtNguoiNhanId">
+                      <option [ngValue]="null">— Chọn người —</option>
+                      @for (n of nhanVien(); track n.id) {
+                        <option [ngValue]="n.id">
+                          {{ n.fullName }}{{ n.jobTitle ? ' — ' + n.jobTitle : '' }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    Mức ưu tiên
+                    <select [(ngModel)]="gtUuTien">
+                      <option value="LOW">Thấp</option>
+                      <option value="MEDIUM">Trung bình</option>
+                      <option value="HIGH">Cao</option>
+                    </select>
+                  </label>
+                  <label>
+                    Hạn hoàn thành
+                    <input type="date" [(ngModel)]="gtHan" />
+                  </label>
+                </div>
+
+                <div class="hang">
+                  <button class="phu-nhat" (click)="dongKhung()">Huỷ bỏ</button>
+                  <button class="nut-chinh" [disabled]="!gtNguoiNhanId" (click)="giaoTiepXuong()">
+                    Nhận và giao xuống
+                  </button>
+                </div>
+              </div>
             }
 
             <!-- Hai việc người thực hiện làm được, gập lại thành hai nút. Mở cả hai biểu
@@ -187,8 +270,63 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
               </div>
             }
 
+            <!-- Người tạo: dừng, huỷ hoặc mở lại. Tách khỏi nhóm nút của người thực hiện
+                 bằng một đường kẻ, vì đây là thao tác của người quản lý. -->
+            @if (coTheDungHoacHuy() || coTheMoLai()) {
+              <div class="nut-quan-ly">
+                @if (coTheMoLai()) {
+                  <button class="nut-mo-lai" (click)="moLai()">Mở lại nhiệm vụ</button>
+                }
+                @if (coTheDungHoacHuy()) {
+                  <button [class.dang-mo]="khungMo() === 'tam-dung'" (click)="moKhung('tam-dung')">
+                    Tạm dừng
+                  </button>
+                  <button class="nut-huy" [class.dang-mo]="khungMo() === 'huy'"
+                          (click)="moKhung('huy')">
+                    Huỷ nhiệm vụ
+                  </button>
+                }
+              </div>
+            }
+
+            @if (khungMo() === 'tam-dung' || khungMo() === 'huy') {
+              <div class="hanh-dong doc khung">
+                <label>
+                  Lý do {{ khungMo() === 'huy' ? 'huỷ' : 'tạm dừng' }}
+                  <span class="bat-buoc">*</span>
+                  <textarea [(ngModel)]="lyDoDung" rows="2"
+                            placeholder="Vì sao dừng nhiệm vụ này?"></textarea>
+                </label>
+
+                @if (nhiemVuConDangChay().length > 0) {
+                  <div class="canh-bao-con">
+                    <p>Nhiệm vụ này có <strong>{{ nhiemVuConDangChay().length }}</strong> nhiệm vụ
+                      con đang thực hiện:</p>
+                    <ul>
+                      @for (c of nhiemVuConDangChay(); track c.id) {
+                        <li>#{{ c.id }} {{ c.title }} — {{ c.tenNguoiThucHien ?? 'chưa giao' }}</li>
+                      }
+                    </ul>
+                    <label class="o-tick">
+                      <input type="checkbox" [(ngModel)]="kemNhiemVuCon" />
+                      Dừng theo cả các nhiệm vụ con
+                    </label>
+                  </div>
+                }
+
+                <div class="hang">
+                  <button class="phu-nhat" (click)="dongKhung()">Huỷ bỏ</button>
+                  @if (khungMo() === 'huy') {
+                    <button class="nut-huy-xac-nhan" (click)="huy()">Xác nhận huỷ hẳn</button>
+                  } @else {
+                    <button class="nut-chinh" (click)="tamDung()">Xác nhận tạm dừng</button>
+                  }
+                </div>
+              </div>
+            }
+
             @if (!coTheGiao() && !coTheDoiNguoi() && !coTheTiepNhan() && !coTheCapNhatTienDo()
-                 && !coTheBaoCao() && !coTheDuyet()) {
+                 && !coTheBaoCao() && !coTheDuyet() && !coTheDungHoacHuy() && !coTheMoLai()) {
               <p class="mo">
                 @if (nv()!.statusCode === 'HOAN_THANH') {
                   Nhiệm vụ đã hoàn thành.
@@ -201,6 +339,28 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         </div>
 
         <div class="phai">
+          @if (nv()!.parentTaskId || nv()!.nhiemVuCon.length) {
+            <section class="the">
+              <h2>Chuỗi giao việc</h2>
+              @if (nv()!.parentTaskId) {
+                <div class="muc-cha" (click)="moNhiemVu(nv()!.parentTaskId!)">
+                  <span class="nhan-cap">Nhiệm vụ cha</span>
+                  <span>#{{ nv()!.parentTaskId }} {{ nv()!.tieuDeNhiemVuCha }}</span>
+                </div>
+              }
+              @for (c of nv()!.nhiemVuCon; track c.id) {
+                <div class="muc-con" (click)="moNhiemVu(c.id)">
+                  <span class="nhan" [style.color]="mauTrangThaiCon(c.statusCode)"
+                        [style.background]="mauTrangThaiCon(c.statusCode) + '18'">
+                    {{ c.tenTrangThai }}
+                  </span>
+                  <span class="ten-con">#{{ c.id }} {{ c.title }}</span>
+                  <small>{{ c.tenNguoiThucHien ?? 'chưa giao' }}</small>
+                </div>
+              }
+            </section>
+          }
+
           <section class="the">
             <h2>Lịch sử tiến độ ({{ nv()!.lichSuTienDo.length }})</h2>
             @if (nv()!.lichSuTienDo.length === 0) {
@@ -342,6 +502,171 @@ import { MAU_TRANG_THAI, NguoiDung, NhiemVuChiTiet } from '../core/models';
         gap: 11px;
       }
       /* Hàng nút gập: mỗi nút một cột bằng nhau cho cân. */
+      /* Bảng báo nhiệm vụ đã dừng. Vàng cho tạm dừng, xám cho huỷ hẳn — huỷ là
+         chuyện đã xong, không cần màu cảnh báo. */
+      .bao-dung {
+        background: var(--cam-nhat);
+        border: 1px solid #fde68a;
+        border-left: 3px solid var(--cam);
+        border-radius: var(--bo-nho);
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .bao-dung.huy {
+        background: var(--nen-diu);
+        border-color: var(--vien-dam);
+        border-left-color: var(--chu-nhat);
+      }
+      .bao-dung strong {
+        display: block;
+        font-size: 13.5px;
+        color: var(--chu);
+        margin-bottom: 5px;
+      }
+      .bao-dung .ly-do {
+        margin: 0 0 5px;
+        font-size: 13px;
+        color: var(--chu-vua);
+        line-height: 1.6;
+      }
+      .bao-dung .boi {
+        margin: 0;
+        font-size: 11.5px;
+        color: var(--chu-nhat);
+      }
+
+      /* Nút của người quản lý, tách khỏi nhóm nút người thực hiện bằng đường kẻ. */
+      .nut-quan-ly {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--vien);
+        margin-top: 14px;
+        padding-top: 14px;
+      }
+      .nut-huy {
+        color: var(--do);
+        border-color: #fca5a5;
+      }
+      .nut-huy:hover:not(:disabled) {
+        background: var(--do-nhat);
+        border-color: var(--do);
+      }
+      .nut-huy-xac-nhan {
+        background: var(--do);
+        border-color: var(--do);
+        color: #fff;
+        font-weight: 600;
+      }
+      .nut-huy-xac-nhan:hover:not(:disabled) {
+        background: #b91c1c;
+        border-color: #b91c1c;
+      }
+      .nut-mo-lai {
+        background: var(--xanh);
+        border-color: var(--xanh);
+        color: #fff;
+        font-weight: 600;
+      }
+      .nut-mo-lai:hover:not(:disabled) {
+        background: #15803d;
+        border-color: #15803d;
+      }
+
+      /* Danh sách nhiệm vụ con sẽ bị ảnh hưởng, hiện ngay trong khung xác nhận. */
+      .canh-bao-con {
+        background: var(--mat);
+        border: 1px solid var(--vien);
+        border-radius: var(--bo-nho);
+        padding: 11px 13px;
+        font-size: 12.5px;
+      }
+      .canh-bao-con p {
+        margin: 0 0 6px;
+        color: var(--chu-vua);
+      }
+      .canh-bao-con ul {
+        margin: 0 0 9px;
+        padding-left: 18px;
+        color: var(--chu-nhat);
+        line-height: 1.7;
+      }
+      .canh-bao-con .o-tick {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 550;
+        cursor: pointer;
+      }
+      .canh-bao-con .o-tick input {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--chinh);
+        cursor: pointer;
+      }
+
+      /* Chuỗi giao việc: cha ở trên có nền xanh nhạt, con ở dưới thụt vào. */
+      .muc-cha,
+      .muc-con {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 11px;
+        border-radius: var(--bo-nho);
+        cursor: pointer;
+        font-size: 12.5px;
+        transition: background var(--chuyen);
+      }
+      .muc-cha {
+        background: var(--chinh-nhat);
+        border: 1px solid var(--chinh-vien);
+        color: var(--chinh-dam);
+        margin-bottom: 10px;
+      }
+      .muc-con {
+        border: 1px solid var(--vien);
+        margin-bottom: 7px;
+        margin-left: 14px;
+      }
+      .muc-cha:hover,
+      .muc-con:hover {
+        background: var(--nen-diu);
+      }
+      .nhan-cap {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        flex: none;
+      }
+      .ten-con {
+        flex: 1;
+        color: var(--chu);
+        min-width: 0;
+      }
+
+      .hang-3 {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 620px) {
+        .hang-3 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .nhac {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--chu-nhat);
+        line-height: 1.6;
+        background: var(--chinh-nhat);
+        border-left: 3px solid var(--chinh-vien);
+        border-radius: 0 var(--bo-nho) var(--bo-nho) 0;
+        padding: 9px 12px;
+      }
+
       .nhom-nut {
         display: grid;
         grid-auto-flow: column;
@@ -517,7 +842,17 @@ export class ChiTietComponent implements OnInit {
   noiDungBaoCao = '';
 
   /** Biểu mẫu hành động nào đang mở. Rỗng nghĩa là chỉ hiện hàng nút. */
-  readonly khungMo = signal<'tien-do' | 'bao-cao' | ''>('');
+  readonly khungMo = signal<'tien-do' | 'bao-cao' | 'tam-dung' | 'huy' | 'giao-tiep' | ''>('');
+
+  lyDoDung = '';
+  kemNhiemVuCon = true;
+
+  // Biểu mẫu giao tiếp xuống
+  gtTieuDe = '';
+  gtMoTa = '';
+  gtNguoiNhanId: number | null = null;
+  gtUuTien: MucUuTien = 'MEDIUM';
+  gtHan = '';
   yKien = '';
   diemChatLuong: number | null = null;
   diemHoanThanh: number | null = null;
@@ -623,6 +958,7 @@ export class ChiTietComponent implements OnInit {
         this.thanhCong.set(thongBao);
         this.loi.set('');
         this.khungMo.set('');
+        this.lyDoDung = '';
         // Trả ô chọn về rỗng. Để nguyên người vừa chọn thì màn hình trông như thao tác
         // chưa gửi đi, và người giao dễ bấm thêm lần nữa.
         this.nguoiNhanId = null;
@@ -636,7 +972,7 @@ export class ChiTietComponent implements OnInit {
   }
 
   /** Bấm nút đang mở lần nữa thì gập lại — đỡ phải tìm nút Huỷ. */
-  moKhung(ten: 'tien-do' | 'bao-cao'): void {
+  moKhung(ten: 'tien-do' | 'bao-cao' | 'tam-dung' | 'huy' | 'giao-tiep'): void {
     this.khungMo.set(this.khungMo() === ten ? '' : ten);
     this.loi.set('');
   }
@@ -644,6 +980,129 @@ export class ChiTietComponent implements OnInit {
   dongKhung(): void {
     this.khungMo.set('');
     this.loi.set('');
+  }
+
+  /** Nhiệm vụ đang ở một trong hai trạng thái dừng. */
+  daDung(): boolean {
+    const t = this.nv()?.statusCode;
+    return t === 'TAM_DUNG' || t === 'DA_HUY';
+  }
+
+  /** Chỉ người tạo được dừng, và chỉ khi nhiệm vụ chưa kết thúc. */
+  coTheDungHoacHuy(): boolean {
+    const nv = this.nv();
+    return (
+      !!nv &&
+      nv.creatorId === this.auth.nguoiDung()?.id &&
+      nv.statusCode !== 'HOAN_THANH' &&
+      nv.statusCode !== 'DA_HUY' &&
+      nv.statusCode !== 'TAM_DUNG'
+    );
+  }
+
+  coTheMoLai(): boolean {
+    const nv = this.nv();
+    return !!nv && nv.creatorId === this.auth.nguoiDung()?.id && nv.statusCode === 'TAM_DUNG';
+  }
+
+  /** Nhiệm vụ con chưa kết thúc — đây là những việc sẽ bị ảnh hưởng nếu dừng. */
+  nhiemVuConDangChay(): NhiemVuCon[] {
+    return (this.nv()?.nhiemVuCon ?? []).filter(
+      (c) => c.statusCode !== 'HOAN_THANH' && c.statusCode !== 'DA_HUY' && c.statusCode !== 'TAM_DUNG',
+    );
+  }
+
+  mauTrangThaiCon(ma: MaTrangThai): string {
+    return MAU_TRANG_THAI[ma] ?? '#64748b';
+  }
+
+  /**
+   * Giao tiếp xuống được khi: đang là người nhận, có quyền giao việc, và còn người dưới
+   * quyền để giao. Nhân viên cấp thấp nhất không có ai bên dưới nên không hiện nút.
+   */
+  coTheGiaoTiepXuong(): boolean {
+    return this.auth.coTheGiaoViec() && this.nhanVien().length > 0;
+  }
+
+  /** Mở biểu mẫu giao tiếp, chép sẵn nội dung nhiệm vụ gốc. */
+  moKhungGiaoTiep(): void {
+    if (this.khungMo() === 'giao-tiep') {
+      this.dongKhung();
+      return;
+    }
+    const nv = this.nv();
+    if (nv) {
+      this.gtTieuDe = nv.title;
+      this.gtMoTa = nv.description ?? '';
+      this.gtUuTien = nv.priority;
+      this.gtHan = nv.dueDate ? nv.dueDate.slice(0, 10) : '';
+    }
+    this.gtNguoiNhanId = null;
+    this.khungMo.set('giao-tiep');
+    this.loi.set('');
+  }
+
+  giaoTiepXuong(): void {
+    if (!this.gtTieuDe.trim()) {
+      this.loi.set('Tiêu đề nhiệm vụ không được để trống.');
+      return;
+    }
+    if (!this.gtNguoiNhanId) {
+      this.loi.set('Hãy chọn người thực hiện.');
+      return;
+    }
+
+    this.api
+      .giaoTiepXuong(this.id, {
+        title: this.gtTieuDe.trim(),
+        description: this.gtMoTa.trim() || null,
+        priority: this.gtUuTien,
+        dueDate: this.gtHan || null,
+        assigneeId: this.gtNguoiNhanId,
+      })
+      .subscribe({
+        // Backend trả về nhiệm vụ CON vừa tạo. Ở lại nhiệm vụ cha và tải lại, vì người
+        // dùng vẫn đang theo dõi việc của mình — nhiệm vụ con hiện ngay ở khối Chuỗi giao việc.
+        next: () => {
+          this.thanhCong.set('Đã nhận nhiệm vụ và giao xuống cấp dưới.');
+          this.loi.set('');
+          this.khungMo.set('');
+          this.tai();
+        },
+        error: (e: any) => {
+          this.thanhCong.set('');
+          this.loi.set(e?.error?.detail ?? 'Không giao tiếp xuống được.');
+        },
+      });
+  }
+
+  moNhiemVu(id: number): void {
+    this.router.navigate(['/nhiem-vu', id]);
+  }
+
+  tamDung(): void {
+    if (!this.kiemLyDo()) return;
+    this.api
+      .tamDung(this.id, this.lyDoDung, this.kemNhiemVuCon)
+      .subscribe(this.xong('Đã tạm dừng nhiệm vụ.'));
+  }
+
+  huy(): void {
+    if (!this.kiemLyDo()) return;
+    this.api
+      .huy(this.id, this.lyDoDung, this.kemNhiemVuCon)
+      .subscribe(this.xong('Đã huỷ nhiệm vụ.'));
+  }
+
+  moLai(): void {
+    this.api.moLai(this.id).subscribe(this.xong('Đã mở lại nhiệm vụ.'));
+  }
+
+  /** Lý do là bắt buộc — người bị dừng việc cần biết vì sao. */
+  private kiemLyDo(): boolean {
+    if (this.lyDoDung.trim()) return true;
+    this.loi.set('Phải nêu lý do trước khi dừng nhiệm vụ.');
+    return false;
   }
 
   giao(): void {

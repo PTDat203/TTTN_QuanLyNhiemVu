@@ -8,6 +8,11 @@ namespace TaskApp.Api.Common;
 /// MOI_TAO -> DA_GIAO -> DANG_THUC_HIEN -> CHO_XAC_NHAN -> HOAN_THANH,
 /// nhanh chua dat: CHO_XAC_NHAN -> YEU_CAU_BO_SUNG -> DANG_THUC_HIEN.
 /// </para>
+/// <para>
+/// Hai trang thai dung nam NGOAI vong doi tren, vao duoc tu bat ky trang thai chua ket thuc nao:
+/// TAM_DUNG mo lai duoc ve dung trang thai dang do; DA_HUY la ket thuc, khong mo lai.
+/// Ca hai deu KHONG nam trong <see cref="DangXuLy"/> — xem ghi chu o do.
+/// </para>
 /// Dung nham voi <see cref="TrangThaiBaoCao"/> la loi nghiep vu: hai co che tach roi.
 /// </summary>
 public static class TrangThaiNhiemVu
@@ -30,15 +35,42 @@ public static class TrangThaiNhiemVu
     /// <summary>Da duoc nguoi giao xac nhan hoan thanh. Day la trang thai ket thuc.</summary>
     public const string HoanThanh = "HOAN_THANH";
 
-    /// <summary>Toan bo trang thai hop le, theo dung thu tu SORT_ORDER 1..6.</summary>
+    /// <summary>
+    /// Nguoi tao tam dung nhiem vu kem ly do. Nguoi thuc hien khong thao tac duoc nua,
+    /// nhung mo lai duoc ve dung trang thai truoc khi dung (TASKS.PREV_STATUS_CODE).
+    /// </summary>
+    public const string TamDung = "TAM_DUNG";
+
+    /// <summary>
+    /// Nguoi tao huy han nhiem vu kem ly do. Day la trang thai KET THUC, khong mo lai duoc.
+    /// </summary>
+    public const string DaHuy = "DA_HUY";
+
+    /// <summary>Toan bo trang thai hop le, theo dung thu tu SORT_ORDER 1..8.</summary>
     public static readonly string[] TatCa =
     {
-        MoiTao, DaGiao, DangThucHien, ChoXacNhan, YeuCauBoSung, HoanThanh
+        MoiTao, DaGiao, DangThucHien, ChoXacNhan, YeuCauBoSung, HoanThanh, TamDung, DaHuy
     };
+
+    /// <summary>Hai trang thai dung: nhiem vu khong chay nua, du la tam thoi hay vinh vien.</summary>
+    public static readonly string[] DaDung = { TamDung, DaHuy };
+
+    /// <summary>Trang thai ket thuc, khong di tiep duoc di dau.</summary>
+    public static readonly string[] KetThuc = { HoanThanh, DaHuy };
+
+    /// <summary>Dung duoc khong? Moi trang thai tru hai trang thai ket thuc.</summary>
+    public static bool DungDuoc(string trangThai)
+        => !KetThuc.Contains(trangThai, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Cac trang thai duoc coi la "dang xu ly" khi dem khoi luong cong viec cua mot nhan su.
     /// Dung cho chuc nang AI goi y nguoi thuc hien (muc 8 cua DATABASE_SOURCE_OF_TRUTH).
+    ///
+    /// <para>
+    /// <b>TAM_DUNG va DA_HUY co y KHONG nam trong danh sach nay.</b> Nguoi bi dung viec thi
+    /// dang ranh that, khong con gi phai lam. Neu tinh la dang ban thi diem khoi luong cua ho
+    /// tut xuong va AI se ne ho oan — ma khong co loi nao bao ra.
+    /// </para>
     /// </summary>
     public static readonly string[] DangXuLy =
     {
@@ -54,7 +86,12 @@ public static class TrangThaiNhiemVu
             [DangThucHien] = new[] { ChoXacNhan },
             [ChoXacNhan] = new[] { HoanThanh, YeuCauBoSung },
             [YeuCauBoSung] = new[] { DangThucHien },
-            [HoanThanh] = Array.Empty<string>()
+            [HoanThanh] = Array.Empty<string>(),
+
+            // TAM_DUNG khong di tiep bang bang nay. Mo lai la quay ve dung trang thai luu
+            // trong PREV_STATUS_CODE, xu ly rieng trong NhiemVuService.MoLaiAsync.
+            [TamDung] = Array.Empty<string>(),
+            [DaHuy] = Array.Empty<string>()
         };
 
     /// <summary>Ten hien thi tieng Viet cua tung trang thai.</summary>
@@ -66,7 +103,9 @@ public static class TrangThaiNhiemVu
             [DangThucHien] = "Đang thực hiện",
             [ChoXacNhan] = "Chờ xác nhận",
             [YeuCauBoSung] = "Yêu cầu bổ sung",
-            [HoanThanh] = "Hoàn thành"
+            [HoanThanh] = "Hoàn thành",
+            [TamDung] = "Tạm dừng",
+            [DaHuy] = "Đã huỷ"
         };
 
     /// <summary>Kiem tra mot chuoi co phai ma trang thai hop le hay khong.</summary>

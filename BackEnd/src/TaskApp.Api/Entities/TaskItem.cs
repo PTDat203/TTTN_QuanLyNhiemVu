@@ -62,6 +62,35 @@ public class TaskItem : IAuditable
     /// <summary>Cot UPDATED_AT.</summary>
     public DateTime UpdatedAt { get; set; }
 
+    // ---------------------------------------------------------------- tam dung / huy
+
+    /// <summary>Ly do dung hoac huy (STOP_REASON). Bat buoc khi o TAM_DUNG hoac DA_HUY.</summary>
+    public string? StopReason { get; set; }
+
+    /// <summary>Nguoi ra quyet dinh dung hoac huy (STOPPED_BY).</summary>
+    public long? StoppedBy { get; set; }
+
+    /// <summary>Thoi diem dung hoac huy (STOPPED_AT).</summary>
+    public DateTime? StoppedAt { get; set; }
+
+    /// <summary>
+    /// Trang thai ngay truoc khi tam dung (PREV_STATUS_CODE).
+    /// Mo lai thi quay ve day, khong phai lam lai tu dau. Chi co gia tri khi dang TAM_DUNG.
+    /// </summary>
+    public string? PrevStatusCode { get; set; }
+
+    // ---------------------------------------------------------------- cha - con
+
+    /// <summary>
+    /// Nhiem vu cha (PARENT_TASK_ID).
+    /// <para>
+    /// Chi nguoi tao moi giao duoc viec, nen khi nguoi nhan la cap quan ly muon giao tiep
+    /// xuong thi ho tao mot nhiem vu MOI tro ve nhiem vu dang nhan. Nho cot nay ma dung
+    /// nhiem vu cha thi biet ngay ben duoi con nhung viec nao.
+    /// </para>
+    /// </summary>
+    public long? ParentTaskId { get; set; }
+
     // ----- Navigation property -----
 
     /// <summary>Nguoi tao/giao nhiem vu (CREATOR_ID).</summary>
@@ -90,4 +119,13 @@ public class TaskItem : IAuditable
 
     /// <summary>Kỹ năng nhiệm vụ đòi hỏi, do người giao nhập hoặc AI trích.</summary>
     public ICollection<TaskRequiredSkill> KyNangYeuCau { get; set; } = new List<TaskRequiredSkill>();
+
+    /// <summary>Nguoi da dung hoac huy nhiem vu nay.</summary>
+    public User? NguoiDung { get; set; }
+
+    /// <summary>Nhiem vu cha.</summary>
+    public TaskItem? Parent { get; set; }
+
+    /// <summary>Cac nhiem vu con duoc giao tiep xuong tu nhiem vu nay.</summary>
+    public ICollection<TaskItem> Children { get; set; } = new List<TaskItem>();
 }

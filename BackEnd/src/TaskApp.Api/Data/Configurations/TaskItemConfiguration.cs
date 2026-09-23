@@ -124,5 +124,30 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .OnDelete(DeleteBehavior.Restrict);
 
         e.HasIndex(x => new { x.TeamId, x.DepartmentId }).HasDatabaseName("IDX_TASKS_TEAM_DEPT");
+
+        // ------------------------------------------------------------ tam dung / huy
+        e.Property(x => x.StopReason).HasColumnName("STOP_REASON").HasMaxLength(500);
+        e.Property(x => x.StoppedBy).HasColumnName("STOPPED_BY");
+        e.Property(x => x.StoppedAt).HasColumnName("STOPPED_AT");
+        e.Property(x => x.PrevStatusCode).HasColumnName("PREV_STATUS_CODE").HasMaxLength(30);
+
+        e.HasOne(x => x.NguoiDung)
+            .WithMany()
+            .HasForeignKey(x => x.StoppedBy)
+            .HasConstraintName("FK_TASKS_STOPPED_BY")
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ------------------------------------------------------------ cha - con
+        e.Property(x => x.ParentTaskId).HasColumnName("PARENT_TASK_ID");
+
+        // SetNull chu khong Cascade: xoa nhiem vu cha thi con van con, chi mat lien ket.
+        // Xoa day chuyen se cuon mat ca lich su lam viec cua nguoi o duoi.
+        e.HasOne(x => x.Parent)
+            .WithMany(x => x.Children)
+            .HasForeignKey(x => x.ParentTaskId)
+            .HasConstraintName("FK_TASKS_PARENT")
+            .OnDelete(DeleteBehavior.SetNull);
+
+        e.HasIndex(x => x.ParentTaskId).HasDatabaseName("IDX_TASKS_PARENT");
 }
 }
