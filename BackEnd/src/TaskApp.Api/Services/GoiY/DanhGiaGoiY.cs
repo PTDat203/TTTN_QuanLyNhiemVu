@@ -392,33 +392,79 @@ public sealed class DanhGiaGoiY
             mrr = Tron(xepHang.Count == 0 ? 0 : xepHang.Average(x => hang(x) is { } h ? 1.0 / h : 0.0))
         };
 
-        object Phong(Func<KetQuaMotNhiemVu, KetQuaSuyLuan> suyLuan) => new
+        // Ca KHÔNG RÕ thì tầng 1 không lọc ai, nên người đúng chắc chắn còn trong danh sách. Đó
+        // là "không loại nhầm", KHÔNG phải "đoán đúng phòng". Gộp hai thứ vào một con số khiến chỉ
+        // số lạc quan CÓ HỆ THỐNG: càng nhiều ca AI không kết luận nổi thì điểm càng đẹp — một mô
+        // hình luôn trả về KHÔNG RÕ sẽ đạt 100%. Nên tách hẳn làm hai và in kèm mẫu số.
+        object Phong(Func<KetQuaMotNhiemVu, KetQuaSuyLuan> suyLuan)
         {
-            doChinhXacPhongDauTien = Tron(ds.Count == 0 ? 0 : ds.Average(x =>
-                suyLuan(x).CacPhong.FirstOrDefault()?.DonVi.Id == x.NhiemVu.DepartmentId ? 1.0 : 0.0)),
-            tyLeGiuDungPhong = Tron(ds.Count == 0 ? 0 : ds.Average(x =>
-                suyLuan(x).KetLuan == KetLuanPhongBan.KhongRo ||
-                suyLuan(x).PhongDaChon.Contains(x.NhiemVu.DepartmentId!.Value) ? 1.0 : 0.0)),
-            tyLeChacChan = Tron(ds.Count == 0 ? 0 : ds.Average(x => suyLuan(x).KetLuan == KetLuanPhongBan.ChacChan ? 1.0 : 0.0))
-        };
+            var coLoc = ds.Where(x => suyLuan(x).KetLuan != KetLuanPhongBan.KhongRo).ToList();
+
+            return new
+            {
+                doChinhXacPhongDauTien = Tron(ds.Count == 0 ? 0 : ds.Average(x =>
+                    suyLuan(x).CacPhong.FirstOrDefault()?.DonVi.Id == x.NhiemVu.DepartmentId ? 1.0 : 0.0)),
+
+                // Số cũ, giữ nguyên công thức nhưng gọi đúng tên thứ nó đo.
+                tyLeKhongLoaiNham = Tron(ds.Count == 0 ? 0 : ds.Average(x =>
+                    suyLuan(x).KetLuan == KetLuanPhongBan.KhongRo ||
+                    suyLuan(x).PhongDaChon.Contains(x.NhiemVu.DepartmentId!.Value) ? 1.0 : 0.0)),
+
+                // Chỉ tính những ca AI thực sự dám lọc. Đây mới là chỉ số nói lên chất lượng tầng 1.
+                soNhiemVuCoLoc = coLoc.Count,
+                tyLeGiuDungPhongKhiCoLoc = Tron(coLoc.Count == 0 ? 0 : coLoc.Average(x =>
+                    suyLuan(x).PhongDaChon.Contains(x.NhiemVu.DepartmentId!.Value) ? 1.0 : 0.0)),
+
+                tyLeChacChan = Tron(ds.Count == 0 ? 0 : ds.Average(x => suyLuan(x).KetLuan == KetLuanPhongBan.ChacChan ? 1.0 : 0.0))
+            };
+        }
+
+        // Nhiệm vụ không có kỹ năng nhập tay nào thì KHÔNG có nhãn đúng để so: mọi kỹ năng AI
+        // trích ở đó đều bị tính dương tính giả, kéo độ chính xác xuống oan. Đo song song hai con
+        // số — trên toàn bộ, và chỉ trên những nhiệm vụ thật sự có nhãn.
+        var coNhanKyNang = ds.Where(x => x.NhiemVu.KyNangThat.Count > 0).ToList();
 
         object KyNang(Func<KetQuaMotNhiemVu, IEnumerable<long>> chon)
         {
-            int dungRa = 0, saiRa = 0, bo = 0;
-            foreach (var x in ds)
+            static NguongKyNang Do(List<KetQuaMotNhiemVu> tap, Func<KetQuaMotNhiemVu, IEnumerable<long>> lay)
             {
-                var c = chon(x).ToHashSet();
-                dungRa += c.Count(x.NhiemVu.KyNangThat.Contains);
-                saiRa += c.Count(k => !x.NhiemVu.KyNangThat.Contains(k));
-                bo += x.NhiemVu.KyNangThat.Count(k => !c.Contains(k));
+                int dungRa = 0, saiRa = 0, bo = 0;
+                foreach (var x in tap)
+                {
+                    var c = lay(x).ToHashSet();
+                    dungRa += c.Count(x.NhiemVu.KyNangThat.Contains);
+                    saiRa += c.Count(k => !x.NhiemVu.KyNangThat.Contains(k));
+                    bo += x.NhiemVu.KyNangThat.Count(k => !c.Contains(k));
+                }
+                return TaoNguongKyNang(0, 0, dungRa, saiRa, bo);
             }
-            var n = TaoNguongKyNang(0, 0, dungRa, saiRa, bo);
-            return new { doChinhXac = n.DoChinhXac, doPhu = n.DoPhu, f1 = n.F1 };
+
+            var tatCa = Do(ds, chon);
+            var coNhan = Do(coNhanKyNang, chon);
+
+            return new
+            {
+                doChinhXac = tatCa.DoChinhXac,
+                doPhu = tatCa.DoPhu,
+                f1 = tatCa.F1,
+                khiCoNhan = new { doChinhXac = coNhan.DoChinhXac, doPhu = coNhan.DoPhu, f1 = coNhan.F1 }
+            };
         }
 
         return new
         {
             soNhiemVu = ds.Count,
+
+            // Ba nhóm chỉ số dưới đây KHÔNG cùng mẫu số. In thẳng ra để không ai đọc nhầm một
+            // bảng 48 việc thành một bảng 18 việc.
+            mauSo = new
+            {
+                soNhiemVuDoanPhong = ds.Count,
+                soNhiemVuXepHang = xepHang.Count,
+                soNhiemVuTrichKyNang = ds.Count,
+                soNhiemVuCoNhanKyNang = coNhanKyNang.Count
+            },
+
             xepHang = new
             {
                 soNhiemVuCoNhan = xepHang.Count,

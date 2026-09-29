@@ -60,6 +60,23 @@ tk = {u: dang_nhap(u) for u in
       ["giamdoc", "tp.phattrien", "tp.nhansu", "leader.be", "leader.fe", "nv.cuong", "nv.tuan"]}
 
 # ---------------------------------------------------------------------------
+# Kiểm dịch vụ nhúng trước khi chạy
+# ---------------------------------------------------------------------------
+# Thiếu dịch vụ nhúng thì backend vẫn chạy bằng TF-IDF dự phòng — đúng thiết kế, nhưng phần
+# đoán phòng kém chính xác hơn hẳn và vài ca mục G sẽ trượt. Không báo thì người chạy mất công
+# đi tìm lỗi trong mã, trong khi nguyên nhân chỉ là một dịch vụ chưa bật.
+st, _cau_hinh = goi("GET", "/api/goi-y/cau-hinh", tk["giamdoc"])
+CO_NHUNG = st == 200 and _cau_hinh.get("dichVuNhung", {}).get("sanSang") is True
+if not CO_NHUNG:
+    ly_do = _cau_hinh.get("dichVuNhung", {}).get("loi") if st == 200 else f"HTTP {st}"
+    print()
+    print("!! DỊCH VỤ NHÚNG KHÔNG SẴN SÀNG — đang chạy bằng TF-IDF dự phòng.")
+    print(f"   Lý do: {ly_do}")
+    print("   Các ca đoán phòng ở mục G nhiều khả năng sẽ trượt. Đây KHÔNG phải lỗi mã nguồn.")
+    print("   Bật lại: cd BackEnd/ai && .venv/Scripts/python -m uvicorn app:app --port 8000")
+    print()
+
+# ---------------------------------------------------------------------------
 # A. Mỗi người thấy bao nhiêu nhiệm vụ — so với SQL độc lập
 # ---------------------------------------------------------------------------
 # Danh sách chỉ hiện VIỆC CỦA CHÍNH MÌNH: mình tạo, hoặc giao cho mình. Không còn phạm vi theo
@@ -313,4 +330,7 @@ for d, ten, ct in KET_QUA:
     print(f"{'ĐẠT ' if d else 'LỖI'}  {ten}" + ("" if d else f"   <-- {ct}"))
 don_dep()
 print(f"\n{dat}/{len(KET_QUA)} đạt")
+if not CO_NHUNG:
+    print("Chạy không có dịch vụ nhúng — các ca đoán phòng mục G trượt vì lý do này,")
+    print("không phải vì mã nguồn hỏng. Bật dịch vụ rồi chạy lại để có con số thật.")
 sys.exit(0 if dat == len(KET_QUA) else 1)

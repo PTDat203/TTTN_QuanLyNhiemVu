@@ -65,7 +65,7 @@ báo cáo, nên không bao giờ chạm vào dữ liệu nghiệp vụ thật. N
 
 ### Dọn bộ nhiệm vụ dựng để thử tay
 
-`Tài liệu/cong_cu_kiem_thu/tao_nhiem_vu_thu.py` dựng 15 nhiệm vụ phủ hết vòng đời, các ca AI đoán
+`BackEnd/kiem_thu/tao_nhiem_vu_thu.py` dựng 15 nhiệm vụ phủ hết vòng đời, các ca AI đoán
 phòng và các ca phân quyền, để thử tay trên giao diện. Bộ này cố ý đẩy nhiệm vụ đi hết vòng đời nên
 có tiến độ, báo cáo và điểm duyệt — script 25 không với tới vì nó cố tình tránh mọi việc có dữ liệu
 con. Dùng script 26:
