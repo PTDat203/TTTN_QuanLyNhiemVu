@@ -33,6 +33,7 @@ BEGIN
     FROM   TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
+                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
@@ -49,6 +50,7 @@ BEGIN
     SELECT t.ID FROM TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
+                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
@@ -60,6 +62,7 @@ BEGIN
   DELETE FROM TASKS t
   WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
+                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                       'Lập bảng lương và bảo hiểm tháng 10',
                       'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
