@@ -31,7 +31,7 @@ NGUOI_GIAO_VIEC = ["giamdoc", "tp.phattrien", "tp.nhansu", "tp.hanhchinh", "lead
 #   ("xong", id, user)         ... rồi được duyệt 5/5, dừng ở Hoàn thành
 # ---------------------------------------------------------------------------
 BO_THU = [
-    ("A. Sáu trạng thái của vòng đời nhiệm vụ",
+    ("A. Sáu trạng thái của vòng đời chính (chưa phủ Tạm dừng / Đã huỷ)",
      "leader.be", "Viết tài liệu API cho cổng thanh toán",
      "Mô tả các điểm cuối, tham số và mã lỗi của cổng thanh toán. Xuất bản dạng OpenAPI.",
      "MEDIUM", "2026-10-15", None,

@@ -63,12 +63,10 @@ public static class VaiTro
     public static string[] CacCapDuoi(string? vaiTro)
         => TatCa.Where(v => Bac(v) > Bac(vaiTro)).ToArray();
 
-    /// <summary>Giám đốc thấy và giao được việc ở mọi phòng, không giới hạn phạm vi.</summary>
-    public static bool ThayToanCongTy(string? vaiTro) => vaiTro == GiamDoc;
-
-    /// <summary>Cấp quản lý — dùng để quyết định phạm vi nhìn thấy dữ liệu.</summary>
-    public static bool LaCapQuanLy(string? vaiTro)
-        => vaiTro is GiamDoc or TruongPhong or TruongNhom;
+    // Đã gỡ ThayToanCongTy và LaCapQuanLy ngày 06/10/2026: không nơi nào gọi, mà chú thích của
+    // chúng còn mô tả quy tắc "phạm vi nhìn thấy dữ liệu" đã bị bỏ từ 29/09 — danh sách nhiệm vụ
+    // nay chỉ hiện việc mình tạo hoặc giao cho mình, kể cả Giám đốc. Mã chết mà mô tả sai quy tắc
+    // còn hại hơn không có mã. Xem PhamViToChuc.ViecCuaToi và PhamViToChuc.QuyenXemAsync.
 
     /// <summary>Thứ bậc: số càng nhỏ càng cao. Dùng để so ai cấp trên của ai.</summary>
     public static int Bac(string? vaiTro) => vaiTro switch

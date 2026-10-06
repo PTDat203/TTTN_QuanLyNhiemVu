@@ -167,9 +167,11 @@ public sealed class DanhGiaGoiY
     /// đang có trong cấu hình.
     ///
     /// <para>
-    /// Phòng ban: trong các bộ ngưỡng GIỮ ĐÚNG PHÒNG ở ít nhất 95% nhiệm vụ, chọn bộ lọc gọn nhất
-    /// (trung bình giữ lại ít phòng nhất). Lọc sai phòng là loại luôn người đúng khỏi danh sách —
-    /// lỗi nặng hơn nhiều so với lọc chưa gọn, nên đặt điều kiện giữ đúng lên trước.
+    /// Phòng ban: trong các bộ ngưỡng GIỮ ĐÚNG PHÒNG ở ít nhất 95% nhiệm vụ, lấy những bộ gọn gần
+    /// bằng bộ gọn nhất (chênh không quá 0,05 phòng trung bình), rồi chọn bộ có SÀN CAO NHẤT — để
+    /// không xoá mất nhánh KHÔNG RÕ dành cho những nhiệm vụ lạ hẳn mà tập hiệu chỉnh không có.
+    /// Lọc sai phòng là loại luôn người đúng khỏi danh sách — lỗi nặng hơn nhiều so với lọc chưa
+    /// gọn, nên đặt điều kiện giữ đúng lên trước.
     /// </para>
     /// <para>Kỹ năng: chọn bộ ngưỡng có F1 cao nhất so với kỹ năng người giao nhập tay.</para>
     /// </summary>

@@ -56,9 +56,11 @@ public sealed class CauHinhGoiY
     /// hơn người 3–4 năm làm không tốt. Quan hệ này được ép cứng trong <see cref="KiemTra"/>.
     /// </para>
     /// <para>
-    /// Chọn 0,10 sau khi quét 0 / 0,05 / 0,10 / 0,15 trên tập kiểm tra: dưới 0,10 thì người vừa
-    /// vào chưa làm việc nào vẫn xếp TRÊN người sáu năm làm đúng hạn 100% ở ca #55; trên 0,10 thì
-    /// không đổi được thêm ca nào nữa mà chỉ bào mòn các thành phần khác.
+    /// Chọn 0,10 sau khi quét 0 / 0,05 / 0,10 / 0,15 trên bốn ca thử tay CHƯA GIAO (#54, #55,
+    /// #89, #90 — dựng riêng để thử tầng đoán phòng, không nằm trong tập có nhãn): dưới 0,10 thì
+    /// ở ca #55 người vừa vào chưa làm việc nào vẫn xếp TRÊN người sáu năm làm đúng hạn 100%;
+    /// trên 0,10 không đổi thêm được ca nào mà chỉ bào mòn các thành phần khác. Tập kiểm tra 18
+    /// nhiệm vụ có nhãn chỉ dùng để XÁC NHẬN không chỉ số nào tụt sau khi thêm thâm niên.
     /// </para>
     /// </summary>
     public double TrongSoThamNien { get; set; } = 0.10;

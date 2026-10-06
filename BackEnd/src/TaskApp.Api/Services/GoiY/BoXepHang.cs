@@ -25,8 +25,11 @@ namespace TaskApp.Api.Services.GoiY;
 /// </code>
 ///
 /// <para>
-/// Bằng cấp KHÔNG phải điều kiện lọc. Nó chỉ góp một phần nhỏ qua đoạn hồ sơ đem so ngữ nghĩa,
-/// nên người học Kinh tế nhưng làm Backend giỏi vẫn được xếp theo đúng năng lực thực tế.
+/// Bằng cấp của TỪNG ứng viên không phải điều kiện lọc — nó chỉ góp một phần nhỏ qua đoạn hồ sơ
+/// đem so ngữ nghĩa, nên người học Kinh tế nhưng làm Backend giỏi vẫn được xếp theo đúng năng lực
+/// thực tế. Nhưng chuyên ngành của CẢ PHÒNG thì có mặt trong văn bản hồ sơ phòng ban
+/// (<see cref="NapDuLieuGoiY"/> dựng qua <c>VanBanHoSo.PhongBan</c>), nên nó góp gián tiếp vào
+/// việc tầng 1 chọn phòng nào — mà tầng 1 mới là chỗ lọc cứng ứng viên.
 /// </para>
 /// </summary>
 public sealed class BoXepHang
@@ -260,7 +263,8 @@ public sealed class BoXepHang
                 : 0.0);
 
         // Hiệu suất: điểm đánh giá trung bình, làm mượt Laplace về giá trị tiên nghiệm. Người mới
-        // chưa có đánh giá nào nhận đúng giá trị tiên nghiệm — trung tính, không phải 0.
+        // chưa có đánh giá nào nhận đúng giá trị tiên nghiệm 0,35 — cố ý DƯỚI giữa thang, không
+        // phải 0 và cũng không phải trung tính (lý do ở CauHinhGoiY.HieuSuatTienNghiem).
         var danhGia = u.ViecDaXong.Where(v => v.HieuSuat.HasValue).Select(v => v.HieuSuat!.Value).ToList();
         var hieuSuat = (danhGia.Sum() + c.SoQuanSatAo * c.HieuSuatTienNghiem) / (danhGia.Count + c.SoQuanSatAo);
 
@@ -291,9 +295,14 @@ public sealed class BoXepHang
         // Khối lượng: càng rảnh càng cao, đầy tải thì 0.
         var khoiLuong = Math.Clamp(1.0 - u.TaiHienTai / c.NguongKhoiLuong, 0.0, 1.0);
 
-        // Thâm niên: người làm lâu được cộng thêm so với người vừa vào chưa có kinh nghiệm.
-        // Thang log để một hai năm đầu đáng giá hơn hẳn năm thứ bảy, thứ tám. Trọng số nhỏ nên
-        // không bao giờ lật ngược được chênh lệch về hiệu suất.
+        // Thâm niên: người làm lâu được cộng thêm so với người vừa vào chưa có kinh nghiệm. Thang
+        // log, nhưng KẸP TRẦN ở NamThamNienToiDa = 2 năm, nên từ năm thứ hai trở đi mọi người bằng
+        // nhau (1,0) — thang log chỉ có tác dụng trong hai năm đầu.
+        //
+        // Trọng số 0,10 cộng trần 2 năm giữ được quy tắc đã ép cứng ở KiemTraQuyTacThamNien:
+        // người 1 năm làm tốt vẫn hơn người 4 năm làm kém. Nhưng nói "không bao giờ lật ngược
+        // được chênh lệch hiệu suất" là SAI — chênh lệch hiệu suất NHỎ vẫn bị vượt: thâm niên
+        // đóng góp tối đa 0,10, trong khi nửa thang hiệu suất chỉ là 0,15 × 0,5 = 0,075.
         var thamNien = Math.Min(1.0, Math.Log(1 + u.SoNamLamViec) / Math.Log(1 + c.NamThamNienToiDa));
 
         var diem = new DiemThanhPhan
