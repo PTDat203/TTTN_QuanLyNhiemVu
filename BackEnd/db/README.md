@@ -34,13 +34,18 @@ sqlplus TASK_APP/<mat_khau>@localhost:1521/XEPDB1 @24_seed_v2.sql
 | `24_seed_v2.sql` | Dữ liệu | Dữ liệu cho phần V2 | Có — không xoá người hay nhiệm vụ |
 | `25_don_rac_kiem_thu.sql` | Dữ liệu | Xoá nhiệm vụ do `kiem_thu_phan_quyen.py` sinh ra | Có — an toàn, xem mục dưới |
 | `26_don_du_lieu_thu.sql` | Dữ liệu | Xoá bộ nhiệm vụ do `tao_nhiem_vu_thu.py` dựng, kể cả tiến độ và báo cáo | Có — khớp đúng danh sách tiêu đề |
+| `27_lam_day_ho_so_phong_ban.sql` | Dữ liệu | Viết lại `DEPARTMENTS.DESCRIPTION` cho đủ việc phòng làm — đầu vào khai báo duy nhất của tầng 1 đoán phòng | Có — chỉ ghi đè mô tả |
+| `28_tam_dung_huy_va_nhiem_vu_con.sql` | Lược đồ | Hai trạng thái `TAM_DUNG`/`DA_HUY`, năm cột lý do dừng, khoá ngoại `PARENT_TASK_ID` | Có — chỉ mở rộng |
 | `_khong_dung/` | — | Script cũ hoặc phá huỷ dữ liệu | **Không** — xem `_khong_dung/README.md` |
 
 ### Dựng lại toàn bộ dữ liệu demo
 
 ```text
-21_seed_to_chuc.sql  ->  22_seed_nhiem_vu.sql  ->  24_seed_v2.sql
+21_seed_to_chuc.sql  ->  22_seed_nhiem_vu.sql  ->  24_seed_v2.sql  ->  27_lam_day_ho_so_phong_ban.sql
 ```
+
+27 chạy sau cùng vì 21 ghi lại `DEPARTMENTS`, làm mất phần mô tả đã được viết đầy. Thiếu bước
+này thì tầng 1 đoán phòng tụt hẳn với các việc hành chính đời thường.
 
 21 và 22 đều xoá dữ liệu và làm mất phần V2 gắn với nó, nên 24 luôn chạy sau cùng.
 Mật khẩu mọi tài khoản demo: `123456`.
@@ -97,7 +102,8 @@ lược đồ mới:
 
 ## Lược đồ đã kiểm chứng
 
-Kiểm bằng `sqlplus` trên database thật ngày 11/09/2026.
+Kiểm bằng `sqlplus` trên database thật ngày 11/09/2026, cập nhật theo
+`28_tam_dung_huy_va_nhiem_vu_con.sql` (23/09/2026).
 
 ### 12 bảng
 
@@ -109,7 +115,7 @@ Kiểm bằng `sqlplus` trên database thật ngày 11/09/2026.
 | `USER_QUALIFICATIONS` | Bằng cấp, chuyên ngành |
 | `SKILLS` | Danh mục kỹ năng chuẩn hoá |
 | `USER_SKILLS` | Kỹ năng của từng người: mức 1–5, số năm kinh nghiệm |
-| `TASK_STATUS_LOOKUP` | 6 trạng thái nhiệm vụ |
+| `TASK_STATUS_LOOKUP` | 8 trạng thái nhiệm vụ (thêm `TAM_DUNG`, `DA_HUY` từ script 28) |
 | `TASKS` | Nhiệm vụ: phòng thực thi, nhóm phụ trách, giờ công ước lượng |
 | `TASK_REQUIRED_SKILLS` | Kỹ năng nhiệm vụ đòi hỏi, nguồn `AI` hoặc `MANUAL` |
 | `TASK_PROGRESS` | Lịch sử cập nhật tiến độ |

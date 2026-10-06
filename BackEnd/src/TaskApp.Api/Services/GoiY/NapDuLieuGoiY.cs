@@ -112,7 +112,8 @@ public static class NapDuLieuGoiY
                     DepartmentId = t.DepartmentId,
                     TeamId = t.TeamId,
                     // Tính theo NGÀY DUYỆT ĐẠT chứ không phải ngày nộp: nộp kịp mà phải làm lại mãi
-                    // mới đạt thì không thể tính là đúng hạn.
+                    // mới đạt thì không thể tính là đúng hạn. Việc KHÔNG đặt hạn (DueDate rỗng)
+                    // được tính là đúng hạn — không có hạn thì không thể trễ.
                     DungHan = t.DueDate is null || bc.NgayDuyet.Date <= t.DueDate.Value.Date,
                     ChatLuong = bc.ChatLuong,
                     MucHoanThanh = bc.MucHoanThanh

@@ -310,8 +310,11 @@ public sealed class GoiYService
         }
         else
         {
+            // Tỷ lệ THÔ, chưa làm mượt Laplace — cố ý khác điểm thành phần "Đúng hạn" hiển thị
+            // trên cùng thẻ ứng viên, vì người đọc cần thấy số liệu gốc để tự kiểm chứng chứ
+            // không phải số đã điều chỉnh.
             var tyLe = (int)Math.Round(100.0 * x.SoDungHan / x.SoHoanThanh);
-            lyDo.Add(thamNien + $"Đã hoàn thành {x.SoHoanThanh} việc, đúng hạn {tyLe}%" +
+            lyDo.Add(thamNien + $"Đã hoàn thành {x.SoHoanThanh} việc, đúng hạn {tyLe}% (tỷ lệ thô)" +
                      (x.ChatLuongTrungBinh is { } cl ? $", chất lượng trung bình {cl:0.0}/5." : "."));
         }
 

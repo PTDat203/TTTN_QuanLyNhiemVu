@@ -42,9 +42,10 @@ public sealed class NhiemVuService
     /// Danh sách nhiệm vụ có lọc, sắp xếp và phân trang.
     ///
     /// <para>
-    /// <b>Phạm vi áp ngay trong truy vấn, không lọc sau khi lấy về:</b> ai cũng thấy việc
-    /// mình tạo và việc giao cho mình; trưởng nhóm thấy thêm việc của nhóm, trưởng phòng
-    /// thấy việc của phòng, Giám đốc thấy tất cả. Quy tắc nằm ở <see cref="PhamViToChuc"/>.
+    /// <b>Phạm vi áp ngay trong truy vấn, không lọc sau khi lấy về:</b> danh sách chỉ hiện
+    /// việc mình tạo hoặc việc giao cho mình — kể cả Giám đốc. Không còn phạm vi theo phòng
+    /// hay theo nhóm. Quy tắc nằm ở <see cref="PhamViToChuc.ViecCuaToi"/>; quyền MỞ CHI TIẾT
+    /// thì rộng hơn, đi theo cả chuỗi giao việc (<see cref="PhamViToChuc.QuyenXemAsync"/>).
     /// Lọc ở tầng SQL thì dữ liệu ngoài phạm vi không bao giờ rời khỏi database.
     /// </para>
     /// </summary>

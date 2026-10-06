@@ -31,8 +31,15 @@ export KIEM_THU_MAT_KHAU=123456
 | `chung.py` | Tiện ích dùng chung: gọi API, đăng nhập, chờ backend | — |
 | `chay_ca_vang.py` | Đối chiếu gợi ý với **đáp án do người đặt** trong `bo_ca_vang.json` | **Không** |
 | `hieu_chinh.py` | Gọi ba endpoint đánh giá, lưu JSON thô | **Không** |
-| `kiem_thu_phan_quyen.py` | 42 bài kiểm phân quyền và luồng nghiệp vụ | **CÓ** |
+| `thong_ke.py` | Sinh bảng kết quả Markdown thẳng từ JSON đo được | **Không** |
+| `kiem_thu_phan_quyen.py` | 58 bài kiểm phân quyền và luồng nghiệp vụ (chín mục A–I) | **CÓ** |
 | `tao_nhiem_vu_thu.py` | Dựng 15 nhiệm vụ demo để thử tay trên giao diện | **CÓ** |
+
+> **Con số 58 là của lần chạy 06/10/2026.** Kết quả phụ thuộc dịch vụ nhúng E5: **58/58**
+> khi dịch vụ chạy, **56/58** khi không — hai ca trượt đều là ca AI đoán phòng lúc tạo nhiệm
+> vụ, và bộ kiểm thử tự in cảnh báo khi phát hiện đang chạy bằng TF-IDF dự phòng.
+>
+> Đừng sửa tay con số này; chạy `python kiem_thu_phan_quyen.py` rồi chép dòng tổng kết.
 
 ## Chạy cái gì, khi nào
 

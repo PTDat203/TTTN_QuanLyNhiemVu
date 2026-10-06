@@ -21,7 +21,7 @@ namespace TaskApp.Api.Services.GoiY;
 /// <para><b>Tầng 2 — xếp hạng</b> bên trong tập đã lọc:</para>
 /// <code>
 /// Điểm = 0,35 × NgữNghĩa + 0,15 × MứcKỹNăng + 0,15 × HiệuSuất
-///      + 0,10 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng + 0,05 × ThâmNiên
+///      + 0,05 × ViệcTươngTự + 0,10 × ĐúngHạn + 0,10 × KhốiLượng + 0,10 × ThâmNiên
 /// </code>
 ///
 /// <para>

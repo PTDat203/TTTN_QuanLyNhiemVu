@@ -17,9 +17,15 @@ namespace TaskApp.Api.Services.GoiY;
 /// năng người giao nhập tay (nguồn MANUAL).
 /// </para>
 /// <para>
-/// <b>Chống "biết trước tương lai":</b> mỗi nhiệm vụ được chấm với dữ liệu nhìn từ lúc nó được tạo —
-/// lịch sử và khối lượng việc chỉ tính tới thời điểm đó, bỏ chính nó ra, người vào làm sau đó không
-/// được làm ứng viên.
+/// <b>Chống "biết trước tương lai" — chặn được bốn thứ:</b> lịch sử việc đã làm và khối lượng
+/// đang gánh chỉ tính tới lúc nhiệm vụ được tạo (bỏ chính nó ra), thâm niên tính tại mốc đó, và
+/// người vào làm sau mốc không được làm ứng viên.
+/// </para>
+/// <para>
+/// <b>Phần còn lại là ảnh chụp HÔM NAY:</b> kỹ năng và bằng cấp của ứng viên, vai trò / phòng /
+/// nhóm / trạng thái tài khoản, và toàn bộ văn bản hồ sơ phòng ban — nghĩa là tầng 1 đoán phòng,
+/// thứ quyết định lọc ứng viên, chạy hoàn toàn trên dữ liệu hiện tại. Khai rõ ở đây để con số
+/// đánh giá được đọc đúng: chúng là <b>cận trên lạc quan</b> ở tầng 1.
 /// </para>
 /// <para>
 /// <b>Chia tập theo thời gian:</b> nhiệm vụ tạo trước <see cref="MocChiaTap"/> để hiệu chỉnh ngưỡng,
