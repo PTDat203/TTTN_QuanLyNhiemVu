@@ -1,25 +1,28 @@
 {
- "chayLuc": "2026-09-23T16:29:03",
+ "chayLuc": "2026-10-06T14:06:02",
  "phienBanTrongSo": "v2.2-tham-nien-16-09-2026",
- "soNhiemVuTrongDb": 128,
+ "soNhiemVuTrongDb": 121,
+ "phuongPhap": [
+  "TF-IDF + cosine"
+ ],
  "ketQua": [
   {
    "ma": "tien-dien",
-   "trangThai": "DAT",
+   "trangThai": "LECH",
    "bietTruocLech": false,
    "muc": [
     {
      "ten": "phòng",
-     "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.08)"
+     "dat": false,
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.26)"
     },
     {
      "ten": "top N",
-     "dat": true,
-     "chiTiet": "top 3: 1.Đinh Thị Nga, 2.Lê Văn Thắng, 3.Trịnh Hồng Phúc"
+     "dat": false,
+     "chiTiet": "top 3: 1.Lê Thị Bình, 2.Đỗ Thị Hòa, 3.Phạm Minh Cường"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "cai-windows",
@@ -29,28 +32,28 @@
     {
      "ten": "phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.58)"
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.67)"
     },
     {
      "ten": "kết luận",
      "dat": true,
-     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.290"
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.378"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "wifi-chap-chon",
-   "trangThai": "DAT",
+   "trangThai": "LECH",
    "bietTruocLech": false,
    "muc": [
     {
      "ten": "phòng",
-     "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.30)"
+     "dat": false,
+     "chiTiet": "phòng đứng đầu: Phòng Nhân sự (0.73)"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "mua-giay-in",
@@ -60,10 +63,10 @@
     {
      "ten": "phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.35)"
+     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.21)"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "hop-dong-lao-dong",
@@ -73,15 +76,15 @@
     {
      "ten": "phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Nhân sự (0.95)"
+     "chiTiet": "phòng đứng đầu: Phòng Nhân sự (0.85)"
     },
     {
      "ten": "kết luận",
      "dat": true,
-     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.212"
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.546"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "api-dang-nhap",
@@ -91,15 +94,15 @@
     {
      "ten": "phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.94)"
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.79)"
     },
     {
      "ten": "kết luận",
      "dat": true,
-     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.893"
+     "chiTiet": "ra CHAC_CHAN, chấp nhận CHAC_CHAN, cách biệt 0.729"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "oracle-toi-uu",
@@ -109,7 +112,7 @@
     {
      "ten": "phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.71)"
+     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.64)"
     },
     {
      "ten": "top N",
@@ -117,7 +120,7 @@
      "chiTiet": "top 1: 1.Hoàng Văn Giang"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "tham-nien-nguoi-moi",
@@ -130,7 +133,7 @@
      "chiTiet": "không ai trong danh sách lọt top 2"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "tiec-tat-nien",
@@ -140,36 +143,36 @@
     {
      "ten": "không phải phòng",
      "dat": true,
-     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.87)"
+     "chiTiet": "phòng đứng đầu: Phòng Hành chính - Kế toán (0.47)"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "mo-ho",
-   "trangThai": "LECH_DA_BIET",
+   "trangThai": "DAT_NGOAI_DU_KIEN",
    "bietTruocLech": true,
    "muc": [
     {
      "ten": "kết luận",
-     "dat": false,
-     "chiTiet": "ra CHAC_CHAN, chấp nhận LUONG_LU/KHONG_RO, cách biệt 0.147"
+     "dat": true,
+     "chiTiet": "ra LUONG_LU, chấp nhận LUONG_LU/KHONG_RO, cách biệt 0.143"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "tuyen-lap-trinh-vien",
-   "trangThai": "LECH_DA_BIET",
+   "trangThai": "DAT_NGOAI_DU_KIEN",
    "bietTruocLech": true,
    "muc": [
     {
      "ten": "phòng",
-     "dat": false,
-     "chiTiet": "phòng đứng đầu: Phòng Phát triển phần mềm (0.63)"
+     "dat": true,
+     "chiTiet": "phòng đứng đầu: Phòng Nhân sự (0.58)"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   },
   {
    "ma": "pham-vi-truong-nhom",
@@ -182,7 +185,7 @@
      "chiTiet": "không ai trong danh sách lọt top 99"
     }
    ],
-   "phuongPhap": "Nhúng ngữ nghĩa (intfloat/multilingual-e5-small)"
+   "phuongPhap": "TF-IDF + cosine"
   }
  ]
 }

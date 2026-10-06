@@ -180,6 +180,8 @@ def main():
             "chayLuc": datetime.now().isoformat(timespec="seconds"),
             "phienBanTrongSo": phien_ban,
             "soNhiemVuTrongDb": so_nhiem_vu,
+            # Ghi phương pháp ở cấp tệp để lần sau biết có so được với lần này không.
+            "phuongPhap": sorted({k.get("phuongPhap") for k in ket_qua if k.get("phuongPhap")}),
             "ketQua": ket_qua,
         }, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"\nĐã lưu {TEP_KQ.name} để lần sau đối chiếu.")
@@ -223,6 +225,22 @@ def so_sanh_lan_truoc(ket_qua, phien_ban, so_nhiem_vu):
     truoc = {k["ma"]: k["trangThai"] for k in cu["ketQua"]}
     doi = [(k["ma"], truoc.get(k["ma"], "(ca mới)"), k["trangThai"])
            for k in ket_qua if truoc.get(k["ma"], "(ca mới)") != k["trangThai"]]
+
+    # Đổi phương pháp đo thì KHÔNG so được. Bộ ca vàng hiệu chỉnh cho nhúng ngữ nghĩa; đem so
+    # với một lần chạy TF-IDF dự phòng sẽ ra một đống "hồi quy" giả, trong khi mã không đổi
+    # dòng nào. Đã dính đúng bẫy này ngày 06/10/2026 — bốn ca đổi trạng thái chỉ vì dịch vụ
+    # nhúng bị Smart App Control chặn.
+    pp_nay = sorted({k.get("phuongPhap") for k in ket_qua if k.get("phuongPhap")})
+    pp_cu = cu.get("phuongPhap") or sorted({k.get("phuongPhap") for k in cu["ketQua"]
+                                            if k.get("phuongPhap")})
+    if pp_cu and pp_nay and pp_cu != pp_nay:
+        print(f"\n!! KHÔNG ĐỐI CHIẾU ĐƯỢC với lần chạy {cu.get('chayLuc', '?')}.")
+        print(f"   Lần trước đo bằng: {', '.join(pp_cu)}")
+        print(f"   Lần này   đo bằng: {', '.join(pp_nay)}")
+        print("   Hai phương pháp khác nhau thì chênh lệch KHÔNG nói lên điều gì về mã nguồn.")
+        print("   Bật dịch vụ nhúng rồi chạy lại để có phép so có nghĩa:")
+        print("     cd BackEnd/ai && .venv/Scripts/python -m uvicorn app:app --port 8000")
+        return
 
     print(f"\nSo với lần chạy {cu.get('chayLuc', '?')}:")
     pb_cu, nv_cu = cu.get("phienBanTrongSo"), cu.get("soNhiemVuTrongDb")
