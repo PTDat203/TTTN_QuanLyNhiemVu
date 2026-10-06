@@ -33,11 +33,11 @@ BEGIN
     FROM   TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
-                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
-            OR t.TITLE LIKE '[THỬ]%')
+            OR t.TITLE LIKE '[THỬ]%'
+            OR t.TITLE LIKE 'Kiểm thử dừng %')
       AND  NOT EXISTS (SELECT 1 FROM TASK_PROGRESS p WHERE p.TASK_ID = t.ID)
       AND  NOT EXISTS (SELECT 1 FROM TASK_REPORTS  b WHERE b.TASK_ID = t.ID)
     ORDER BY t.ID
@@ -50,11 +50,11 @@ BEGIN
     SELECT t.ID FROM TASKS t
     WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
-                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                         'Lập bảng lương và bảo hiểm tháng 10',
                         'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
-            OR t.TITLE LIKE '[THỬ]%')
+            OR t.TITLE LIKE '[THỬ]%'
+            OR t.TITLE LIKE 'Kiểm thử dừng %')
       AND  NOT EXISTS (SELECT 1 FROM TASK_PROGRESS p WHERE p.TASK_ID = t.ID)
       AND  NOT EXISTS (SELECT 1 FROM TASK_REPORTS  b WHERE b.TASK_ID = t.ID));
   so_ky_nang := SQL%ROWCOUNT;
@@ -62,11 +62,11 @@ BEGIN
   DELETE FROM TASKS t
   WHERE  (t.TITLE IN ('Kiểm thử phân quyền',
                         'Kiểm thử chuỗi giao việc',
-                        'Thử dừng hai lần',
                         'Kiểm thử chuỗi giao việc — phần con',
                       'Lập bảng lương và bảo hiểm tháng 10',
                       'Tối ưu truy vấn báo cáo doanh thu trên Oracle')
-          OR t.TITLE LIKE '[THỬ]%')
+          OR t.TITLE LIKE '[THỬ]%'
+          OR t.TITLE LIKE 'Kiểm thử dừng %')
     AND  NOT EXISTS (SELECT 1 FROM TASK_PROGRESS p WHERE p.TASK_ID = t.ID)
     AND  NOT EXISTS (SELECT 1 FROM TASK_REPORTS  b WHERE b.TASK_ID = t.ID);
   so_xoa := SQL%ROWCOUNT;

@@ -543,11 +543,17 @@ public sealed class NhiemVuService
                 "Chỉ người tạo nhiệm vụ mới được tạm dừng hoặc huỷ nhiệm vụ này.");
         }
 
-        if (!TrangThaiNhiemVu.DungDuoc(nv.StatusCode))
+        if (!TrangThaiNhiemVu.DungDuoc(nv.StatusCode, huyHan))
         {
-            return KetQua<NhiemVuChiTietDto>.ThatBai(
-                $"Nhiệm vụ đang ở \"{TrangThaiNhiemVu.TenHienThi(nv.StatusCode)}\" nên không dừng được.",
-                MaLoiChung.ChuyenTrangThaiKhongHopLe);
+            // Tạm dừng một việc đang tạm dừng là lỗi riêng, cần câu nhắc riêng: người dùng
+            // thường muốn đổi lý do, chứ không phải dừng lần nữa.
+            var loi = !huyHan && nv.StatusCode == TrangThaiNhiemVu.TamDung
+                ? "Nhiệm vụ đang tạm dừng rồi. Muốn đổi lý do thì mở lại rồi dừng lại; "
+                  + "muốn dừng hẳn thì dùng Huỷ nhiệm vụ."
+                : $"Nhiệm vụ đang ở \"{TrangThaiNhiemVu.TenHienThi(nv.StatusCode)}\" nên không "
+                  + $"{(huyHan ? "huỷ" : "tạm dừng")} được.";
+
+            return KetQua<NhiemVuChiTietDto>.ThatBai(loi, MaLoiChung.ChuyenTrangThaiKhongHopLe);
         }
 
         var luc = DateTime.Now;
@@ -570,7 +576,10 @@ public sealed class NhiemVuService
                 {
                     if (!daTham.Add(con.Id)) continue;
                     dangXet.Enqueue(con.Id);
-                    if (!TrangThaiNhiemVu.DungDuoc(con.StatusCode)) continue;
+                    // Truyền huyHan vào: huỷ cha thì nhiệm vụ con đang tạm dừng cũng phải
+                    // huỷ theo, nhưng tạm dừng cha thì BỎ QUA con đang tạm dừng — ghi đè nó là
+                    // xoá mất trạng thái mà cấp dưới cần khôi phục.
+                    if (!TrangThaiNhiemVu.DungDuoc(con.StatusCode, huyHan)) continue;
 
                     DatTrangThaiDung(
                         con, huyHan,
@@ -677,7 +686,10 @@ public sealed class NhiemVuService
                 "Chỉ người đang nhận nhiệm vụ mới được giao tiếp xuống cấp dưới.");
         }
 
-        if (!TrangThaiNhiemVu.DungDuoc(cha.StatusCode))
+        // Dùng DangChay chứ không DungDuoc: nhiệm vụ cha đang TẠM DỪNG thì cũng không được
+        // giao tiếp xuống, nếu không sẽ đẻ ra một nhiệm vụ con "Đã giao" nằm dưới một nhiệm vụ
+        // cha không chạy — người nhận bắt tay vào làm một việc mà cấp trên đã cho dừng.
+        if (!TrangThaiNhiemVu.DangChay(cha.StatusCode))
         {
             return KetQua<NhiemVuChiTietDto>.ThatBai(
                 $"Nhiệm vụ cha đang ở \"{TrangThaiNhiemVu.TenHienThi(cha.StatusCode)}\" nên không giao tiếp được.",

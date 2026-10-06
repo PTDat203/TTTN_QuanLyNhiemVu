@@ -325,6 +325,93 @@ if st == 201:
         kiem("H  người ngoài chuỗi không mở được -> 403", st == 403, f"HTTP {st}")
 
 # ---------------------------------------------------------------------------
+# I. Dừng, huỷ và giao tiếp xuống — ranh giới giữa hai thao tác
+# ---------------------------------------------------------------------------
+# Khoá lại một lỗi thật: trước 06/10/2026, DungDuoc() dùng chung cho cả tạm dừng lẫn huỷ, nên
+# tạm dừng HAI LẦN ghi đè PREV_STATUS_CODE bằng chính TAM_DUNG. Mở lại sau đó đặt
+# StatusCode = TAM_DUNG với StopReason = NULL, vi phạm CK_TASKS_LY_DO_DUNG, và nhiệm vụ KẸT
+# VĨNH VIỄN — lần nào mở cũng HTTP 409.
+#
+# Bốn ca đầu kiểm cái đã sửa; bốn ca sau kiểm những thứ PHẢI VẪN CHẠY, vì chỗ sửa nằm đúng
+# trên đường đi của chúng.
+
+
+def _tao_da_nhan(hau_to):
+    """Tạo nhiệm vụ giao trưởng phòng Phát triển rồi cho tiếp nhận, trả về id."""
+    st, b = tao_thang("giamdoc", {
+        "title": "Kiểm thử dừng " + hau_to, "description": "ranh giới dừng/huỷ",
+        "priority": "MEDIUM", "assigneeId": 2})
+    if st != 201:
+        return None
+    goi("POST", f"/api/nhiem-vu/{b['id']}/tiep-nhan", tk["tp.phattrien"])
+    return b["id"]
+
+
+_a = _tao_da_nhan("chồng dừng")
+if _a:
+    goi("POST", f"/api/nhiem-vu/{_a}/tam-dung", tk["giamdoc"],
+        {"lyDo": "Lần một.", "kemNhiemVuCon": False})
+    st, b = goi("POST", f"/api/nhiem-vu/{_a}/tam-dung", tk["giamdoc"],
+                {"lyDo": "Lần hai.", "kemNhiemVuCon": False})
+    kiem("I  tạm dừng việc ĐANG tạm dừng -> 400", st == 400, f"HTTP {st}: {loi(b)[:60]}")
+
+    st, b = goi("POST", f"/api/nhiem-vu/{_a}/mo-lai", tk["giamdoc"])
+    kiem("I  mở lại về đúng trạng thái trước khi dừng",
+         st == 200 and b.get("tenTrangThai") == "Đang thực hiện",
+         b.get("tenTrangThai") if st == 200 else f"HTTP {st}: {loi(b)[:50]}")
+
+_b = _tao_da_nhan("huỷ khi đang dừng")
+if _b:
+    goi("POST", f"/api/nhiem-vu/{_b}/tam-dung", tk["giamdoc"],
+        {"lyDo": "Dừng để cân nhắc.", "kemNhiemVuCon": False})
+    st, b = goi("POST", f"/api/nhiem-vu/{_b}/huy", tk["giamdoc"],
+                {"lyDo": "Cân nhắc xong, bỏ hẳn.", "kemNhiemVuCon": False})
+    kiem("I  huỷ hẳn việc đang tạm dừng -> VẪN được",
+         st == 200 and b.get("tenTrangThai") == "Đã huỷ",
+         b.get("tenTrangThai") if st == 200 else f"HTTP {st}: {loi(b)[:50]}")
+
+_c = _tao_da_nhan("giao tiếp khi dừng")
+if _c:
+    goi("POST", f"/api/nhiem-vu/{_c}/tam-dung", tk["giamdoc"],
+        {"lyDo": "Hoãn.", "kemNhiemVuCon": False})
+    st, b = goi("POST", f"/api/nhiem-vu/{_c}/giao-tiep-xuong", tk["tp.phattrien"],
+                {"title": "Kiểm thử dừng con", "priority": "MEDIUM", "assigneeId": 7})
+    kiem("I  giao tiếp xuống khi nhiệm vụ cha đang dừng -> 400", st == 400,
+         f"HTTP {st}: {loi(b)[:60]}")
+
+    goi("POST", f"/api/nhiem-vu/{_c}/mo-lai", tk["giamdoc"])
+    st, b = goi("POST", f"/api/nhiem-vu/{_c}/giao-tiep-xuong", tk["tp.phattrien"],
+                {"title": "Kiểm thử dừng con", "priority": "MEDIUM", "assigneeId": 7})
+    kiem("I  mở lại rồi giao tiếp xuống -> 201", st == 201, f"HTTP {st}: {loi(b)[:60]}")
+    _con = b.get("id") if st == 201 else None
+
+    if _con:
+        DA_TAO.append((_con, "tp.phattrien"))
+        goi("POST", f"/api/nhiem-vu/{_con}/tiep-nhan", tk["nv.cuong"])
+        goi("POST", f"/api/nhiem-vu/{_con}/tam-dung", tk["tp.phattrien"],
+            {"lyDo": "Trưởng phòng tự dừng vì lý do riêng.", "kemNhiemVuCon": False})
+
+        goi("POST", f"/api/nhiem-vu/{_c}/tam-dung", tk["giamdoc"],
+            {"lyDo": "Giám đốc dừng.", "kemNhiemVuCon": True})
+        st, b = goi("GET", f"/api/nhiem-vu/{_con}", tk["tp.phattrien"])
+        kiem("I  tạm dừng cha KHÔNG ghi đè lý do riêng của con",
+             st == 200 and "lý do riêng" in str(b.get("lyDoDung", "")),
+             str(b.get("lyDoDung"))[:60] if st == 200 else f"HTTP {st}")
+
+        goi("POST", f"/api/nhiem-vu/{_c}/mo-lai", tk["giamdoc"])
+        st, b = goi("GET", f"/api/nhiem-vu/{_con}", tk["tp.phattrien"])
+        kiem("I  mở lại cha KHÔNG mở nhầm con tự dừng",
+             st == 200 and b.get("tenTrangThai") == "Tạm dừng",
+             b.get("tenTrangThai") if st == 200 else f"HTTP {st}")
+
+        goi("POST", f"/api/nhiem-vu/{_c}/huy", tk["giamdoc"],
+            {"lyDo": "Bỏ hẳn nhánh này.", "kemNhiemVuCon": True})
+        st, b = goi("GET", f"/api/nhiem-vu/{_con}", tk["tp.phattrien"])
+        kiem("I  huỷ cha -> con đang tạm dừng cũng bị huỷ theo",
+             st == 200 and b.get("tenTrangThai") == "Đã huỷ",
+             b.get("tenTrangThai") if st == 200 else f"HTTP {st}")
+
+# ---------------------------------------------------------------------------
 dat = sum(1 for d, _, _ in KET_QUA if d)
 for d, ten, ct in KET_QUA:
     print(f"{'ĐẠT ' if d else 'LỖI'}  {ten}" + ("" if d else f"   <-- {ct}"))

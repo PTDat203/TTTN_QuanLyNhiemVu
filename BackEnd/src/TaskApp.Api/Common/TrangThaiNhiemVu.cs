@@ -58,9 +58,42 @@ public static class TrangThaiNhiemVu
     /// <summary>Trang thai ket thuc, khong di tiep duoc di dau.</summary>
     public static readonly string[] KetThuc = { HoanThanh, DaHuy };
 
-    /// <summary>Dung duoc khong? Moi trang thai tru hai trang thai ket thuc.</summary>
-    public static bool DungDuoc(string trangThai)
-        => !KetThuc.Contains(trangThai, StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// Dung duoc bang thao tac nay khong?
+    ///
+    /// <para>
+    /// Hai thao tac co dieu kien KHAC NHAU nen khong gop lam mot duoc:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><b>Huy</b> (<paramref name="huyHan"/> = true): moi trang thai tru hai trang thai
+    ///         ket thuc. Huy han mot viec dang tam dung la hop le — cap tren dung de can nhac
+    ///         roi quyet dinh bo han.</item>
+    ///   <item><b>Tam dung</b>: them dieu kien CHUA dang tam dung. Dung chong len dung se ghi
+    ///         de PREV_STATUS_CODE bang chinh TAM_DUNG, lam mat vinh vien trang thai can khoi
+    ///         phuc; sau do mo lai se dat StatusCode = TAM_DUNG voi StopReason = NULL, vi pham
+    ///         CK_TASKS_LY_DO_DUNG va nhiem vu KET VINH VIEN.</item>
+    /// </list>
+    /// <para>
+    /// Truoc day ham nay khong co tham so <paramref name="huyHan"/> va dung chung cho ca hai,
+    /// nen tam dung hai lan lam hong nhiem vu that. Da tai hien va sua ngay 06/10/2026.
+    /// </para>
+    /// </summary>
+    public static bool DungDuoc(string trangThai, bool huyHan)
+        => !KetThuc.Contains(trangThai, StringComparer.OrdinalIgnoreCase)
+           && (huyHan || !TamDung.Equals(trangThai, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Nhiem vu con DANG CHAY — chua dung, chua ket thuc.
+    ///
+    /// <para>
+    /// Khac <see cref="DungDuoc"/> o cho nay loai ca TAM_DUNG. Dung cho nhung thao tac doi
+    /// nhiem vu phai song: giao tiep xuong cap duoi khong duoc phep khi viec goc dang dung,
+    /// vi se de ra mot nhiem vu con DA_GIAO nam duoi mot nhiem vu cha khong chay.
+    /// </para>
+    /// </summary>
+    public static bool DangChay(string trangThai)
+        => !KetThuc.Contains(trangThai, StringComparer.OrdinalIgnoreCase)
+           && !DaDung.Contains(trangThai, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Cac trang thai duoc coi la "dang xu ly" khi dem khoi luong cong viec cua mot nhan su.
